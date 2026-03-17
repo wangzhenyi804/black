@@ -40,6 +40,16 @@ services:
     networks:
       - blackad-net
 
+  frontend:
+    build: ./frontend
+    container_name: blackad-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - blackad-net
+
 networks:
   blackad-net:
     driver: bridge
