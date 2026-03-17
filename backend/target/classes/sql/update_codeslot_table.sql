@@ -1,0 +1,7 @@
+ALTER TABLE code_slot ADD COLUMN display_type VARCHAR(50);
+ALTER TABLE code_slot ADD COLUMN ad_type VARCHAR(50);
+ALTER TABLE code_slot ADD COLUMN ad_form VARCHAR(50);
+ALTER TABLE code_slot ADD COLUMN ratio INT;
+ALTER TABLE code_slot ADD COLUMN style_type VARCHAR(50);
+ALTER TABLE code_slot ADD COLUMN note TEXT;
+ALTER TABLE code_slot ADD COLUMN image_url VARCHAR(500);

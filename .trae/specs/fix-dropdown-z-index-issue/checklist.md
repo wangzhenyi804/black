@@ -1,0 +1,3 @@
+- [x] Filter container in `DataOverview.tsx` has `z-20`.
+- [x] Filter container in `CodeSlotData.tsx` has `z-20`.
+- [x] Dropdowns overlap the content below without being clipped or hidden.

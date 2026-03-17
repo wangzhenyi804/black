@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+:root {
+  --color-background: #f8fafc;
+  --color-sidebar: #ffffff;
+  --color-card: #ffffff;
+  --color-primary: #3b82f6;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-accent: #8b5cf6;
+  --color-text: #1e293b;
+  --color-text-muted: #64748b;
+  --color-border: rgba(0, 0, 0, 0.05);
+  --color-chart-grid: rgba(0, 0, 0, 0.05);
+  --color-tooltip-bg: #ffffff;
+  --color-tooltip-text: #1e293b;
+  --color-tooltip-border: rgba(0, 0, 0, 0.05);
+  --color-input-bg: #f1f5f9;
+}
+
+.dark {
+  --color-background: #0f0f0f;
+  --color-sidebar: #121212;
+  --color-card: #18181b;
+  --color-text: #f4f4f5;
+  --color-text-muted: #a1a1aa;
+  --color-border: rgba(255, 255, 255, 0.05);
+  --color-chart-grid: rgba(255, 255, 255, 0.05);
+  --color-tooltip-bg: #18181b;
+  --color-tooltip-text: #f4f4f5;
+  --color-tooltip-border: rgba(255, 255, 255, 0.05);
+  --color-input-bg: #09090b;
+}
+
+@theme {
+  --color-background: var(--color-background);
+  --color-sidebar: var(--color-sidebar);
+  --color-card: var(--color-card);
+  --color-primary: var(--color-primary);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-accent: var(--color-accent);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-border: var(--color-border);
+}
+
+@layer base {
+  html {
+    @apply transition-colors duration-200;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  body {
+    @apply bg-background text-[var(--color-text)] antialiased tracking-tight;
+  }
+}
+
+/* Custom Scrollbar for Dark Mode */
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 rounded-full hover:bg-zinc-400 transition-colors;
+}

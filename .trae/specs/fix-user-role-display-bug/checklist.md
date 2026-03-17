@@ -1,0 +1,4 @@
+- [x] User list shows correct role labels (管理员/普通用户/其他)
+- [x] Account status correctly reflects `isActive` from backend
+- [x] User editing correctly handles `isActive` field
+- [x] No more usage of `is_active` in `Users.tsx`

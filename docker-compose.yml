@@ -1,0 +1,48 @@
+services:
+  mysql:
+    image: docker.m.daocloud.io/library/mysql:8.0
+    container_name: blackad-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Zxc12300
+      MYSQL_DATABASE: blackad
+    ports:
+      - "3616:3616"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - blackad-net
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  redis:
+    image: docker.m.daocloud.io/library/redis:latest
+    container_name: blackad-redis
+    ports:
+      - "6979:6979"
+    networks:
+      - blackad-net
+
+  backend:
+    build: ./backend
+    container_name: blackad-backend
+    ports:
+      - "9203:9203"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3616/blackad?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATA_REDIS_HOST: redis
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - blackad-net
+
+networks:
+  blackad-net:
+    driver: bridge
+
+volumes:
+  mysql_data:

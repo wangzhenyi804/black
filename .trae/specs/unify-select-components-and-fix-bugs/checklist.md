@@ -1,0 +1,7 @@
+- [x] `Select.tsx` component is bug-free and robust (handles types, z-index).
+- [x] `DataOverview.tsx` uses `Select` component for all dropdowns.
+- [x] `CodeSlotData.tsx` uses `Select` component for all dropdowns.
+- [x] `Pagination.tsx` uses `Select` component for page size selection.
+- [x] No native `<select>` tags remain in the modified files.
+- [x] Dropdowns function correctly (filtering updates data, pagination updates size).
+- [x] UI styles are consistent and dark-theme compliant.
