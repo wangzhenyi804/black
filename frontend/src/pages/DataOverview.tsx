@@ -1,13 +1,18 @@
-import { useState, useEffect } from 'react';
-import api from '../api/client';
+import clsx from 'clsx';
+import { endOfMonth, format, startOfMonth, startOfQuarter, subDays, subMonths } from 'date-fns';
+import { Activity, DollarSign, Eye, Filter, Layout, MousePointer2, Search, Settings, Target, Terminal, TrendingUp, X, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis, YAxis
 } from 'recharts';
-import { Search, Settings, Filter, Activity, TrendingUp, DollarSign, MousePointer2, Eye, Target, Zap, Layout, Terminal } from 'lucide-react';
-import { format, subDays, startOfMonth, endOfMonth, startOfQuarter, subMonths } from 'date-fns';
+import api from '../api/client';
 import Pagination from '../components/Pagination';
 import Select from '../components/Select';
-import clsx from 'clsx';
 
 interface StatsTrend {
   date: string;
