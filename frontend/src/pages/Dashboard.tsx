@@ -110,7 +110,7 @@ export default function Dashboard() {
   const activeMetricInfo = METRICS.find(m => m.key === activeMetric) || METRICS[0];
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar pr-0 lg:pr-2 space-y-6 lg:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="h-full overflow-y-auto custom-scrollbar pr-0 lg:pr-2 space-y-6 lg:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-full overflow-x-hidden">
       {/* Header Section */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
@@ -150,8 +150,8 @@ export default function Dashboard() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart Section */}
-        <div className="lg:col-span-2 bg-card p-4 lg:p-6 rounded-2xl lg:rounded-3xl border border-border flex flex-col backdrop-blur-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 lg:mb-8">
+        <div className="lg:col-span-2 bg-card p-3 sm:p-4 lg:p-6 rounded-2xl lg:rounded-3xl border border-border flex flex-col backdrop-blur-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 lg:mb-8 px-1 sm:px-0">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 text-primary" />
               <h2 className="text-lg lg:text-xl font-bold text-text">趋势分析</h2>
@@ -175,9 +175,12 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="h-64 lg:h-80 w-full">
+          <div className="h-64 lg:h-80 w-full -ml-4 sm:ml-0">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData}>
+              <AreaChart 
+                data={trendData}
+                margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id={`colorMetric-${activeMetric}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={activeMetricInfo.color} stopOpacity={0.3}/>

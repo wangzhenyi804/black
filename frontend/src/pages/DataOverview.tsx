@@ -188,9 +188,9 @@ export default function DataOverview() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto custom-scrollbar pr-2 space-y-6">
+    <div className="flex flex-col h-full overflow-y-auto custom-scrollbar pr-0 lg:pr-2 space-y-4 lg:space-y-6 animate-in fade-in duration-500 max-w-full overflow-x-hidden">
       {/* Header & Date Filter */}
-      <div className="flex-shrink-0 bg-card border border-border p-4 rounded-2xl space-y-4 backdrop-blur-md relative z-30">
+      <div className="flex-shrink-0 bg-card border border-border p-4 rounded-2xl space-y-4 backdrop-blur-md relative z-30 mx-0">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
              <div className="p-2 bg-primary/10 rounded-lg">
@@ -325,18 +325,18 @@ export default function DataOverview() {
       </div>
 
       {/* Chart Section */}
-      <div className="flex-shrink-0 bg-card p-5 rounded-2xl border border-border h-[360px] flex flex-col">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-6">
-            <h3 className="text-sm font-semibold text-text flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
+      <div className="flex-shrink-0 bg-card p-2 sm:p-5 rounded-2xl border border-border h-[300px] lg:h-[360px] flex flex-col">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 lg:mb-6 px-2 sm:px-0 pt-2 sm:pt-0">
+          <div className="flex items-center gap-4 lg:gap-6">
+            <h3 className="text-xs lg:text-sm font-semibold text-text flex items-center gap-2">
+              <TrendingUp className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary" />
               趋势分析
             </h3>
-            <div className="flex gap-4">
+            <div className="hidden sm:flex gap-4">
               {chartMetrics.map(key => {
                 const m = METRICS.find(x => x.key === key);
-                return <span key={key} className="text-[11px] text-text-muted flex items-center gap-2">
-                  <span className="w-2.5 h-0.5 rounded-full" style={{ backgroundColor: m?.color }}></span>
+                return <span key={key} className="text-[10px] lg:text-[11px] text-text-muted flex items-center gap-2">
+                  <span className="w-2 lg:w-2.5 h-0.5 rounded-full" style={{ backgroundColor: m?.color }}></span>
                   {m?.label}
                 </span>;
               })}
@@ -344,23 +344,26 @@ export default function DataOverview() {
           </div>
           <button
             onClick={() => setIsMetricModalOpen(true)}
-            className="flex items-center gap-2 text-[10px] font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-xl hover:bg-primary/20 transition-all"
+            className="self-start sm:self-auto flex items-center gap-2 text-[10px] font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-xl hover:bg-primary/20 transition-all"
           >
-            <Settings className="w-3.5 h-3.5" />
+            <Settings className="w-3 h-3 lg:w-3.5 lg:h-3.5" />
             指标配置
           </button>
         </div>
         
-        <div className="flex-1 w-full min-h-0">
+        <div className="flex-1 w-full min-h-0 -ml-7 sm:ml-0 -mr-2 sm:mr-0">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={trendData}>
+            <AreaChart 
+              data={trendData}
+              margin={{ top: 10, right: 0, left: -10, bottom: 0 }}
+            >
               <defs>
                 {chartMetrics.map(key => {
                    const m = METRICS.find(x => x.key === key);
                    return (
                      <linearGradient key={`grad-${key}`} id={`color-${key}`} x1="0" y1="0" x2="0" y2="1">
-                       <stop offset="5%" stopColor={m?.color} stopOpacity={0.3}/>
-                       <stop offset="95%" stopColor={m?.color} stopOpacity={0}/>
+                       <stop offset="5%" stopColor={m?.color} stopOpacity="0.3"/>
+                       <stop offset="95%" stopColor={m?.color} stopOpacity="0"/>
                      </linearGradient>
                    );
                 })}
@@ -368,36 +371,39 @@ export default function DataOverview() {
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-chart-grid)" />
               <XAxis 
                 dataKey="date" 
-                fontSize={10} 
+                fontSize={9} 
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: 'var(--color-text-muted)' }}
                 dy={10}
+                minTickGap={20}
               />
               <YAxis 
                 yAxisId="left" 
-                fontSize={10} 
+                fontSize={9} 
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: 'var(--color-text-muted)' }}
+                width={window.innerWidth < 640 ? 40 : 60}
               />
               <YAxis 
                 yAxisId="right" 
                 orientation="right" 
-                fontSize={10} 
+                fontSize={9} 
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: 'var(--color-text-muted)' }}
+                width={window.innerWidth < 640 ? 40 : 60}
               />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'var(--color-tooltip-bg)', 
                   border: '1px solid var(--color-tooltip-border)', 
                   borderRadius: '12px', 
-                  fontSize: '12px',
+                  fontSize: '11px',
                   boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
                 }}
-                itemStyle={{ fontSize: '12px', color: 'var(--color-tooltip-text)' }}
+                itemStyle={{ fontSize: '11px', color: 'var(--color-tooltip-text)' }}
               />
               {chartMetrics.map((key, index) => {
                 const m = METRICS.find(x => x.key === key);

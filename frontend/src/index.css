@@ -49,9 +49,27 @@
   html {
     @apply transition-colors duration-200;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    /* Prevent layout shifts and ensure full height */
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
   }
   body {
     @apply bg-background text-[var(--color-text)] antialiased tracking-tight;
+    overflow-x: hidden;
+    width: 100%;
+    min-height: 100vh;
+    /* Avoid bounce scroll on mobile if possible */
+    overscroll-behavior-y: none;
+  }
+  /* Prevent zoom on focus for mobile devices (iOS requires font-size >= 16px) */
+  input, select, textarea {
+    @apply text-base lg:text-sm;
+    font-size: 16px !important;
+  }
+  @screen lg {
+    input, select, textarea {
+      font-size: 0.875rem !important; /* text-sm */
+    }
   }
 }
 

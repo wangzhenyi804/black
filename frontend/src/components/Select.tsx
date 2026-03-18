@@ -47,15 +47,16 @@ export default function Select({
   };
 
   const sizeClasses = size === 'sm' 
-    ? 'px-3 py-2 text-xs' 
-    : 'px-4 py-3 text-sm';
+    ? 'px-3 py-2 text-base lg:text-xs' 
+    : 'px-4 py-3 text-base lg:text-sm';
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between bg-black/5 dark:bg-white/5 border border-border rounded-xl ${sizeClasses} transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
+        style={{ fontSize: '16px' }} // Inline style to override and ensure 16px on mobile
+        className={`w-full flex items-center justify-between bg-black/5 dark:bg-white/5 border border-border rounded-xl ${sizeClasses} lg:!text-inherit transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
           isOpen ? 'ring-2 ring-primary/20 border-primary' : ''
         }`}
       >

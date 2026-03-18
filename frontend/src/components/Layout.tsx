@@ -208,8 +208,8 @@ export default function Layout() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-background transition-all duration-500 overflow-hidden">
-        <header className="h-16 lg:h-20 border-b border-border flex items-center justify-between px-4 lg:px-10 bg-background/80 backdrop-blur-xl sticky top-0 z-40">
+      <div className="flex-1 flex flex-col min-w-0 bg-background transition-all duration-500 overflow-hidden relative w-full">
+        <header className="h-16 lg:h-20 border-b border-border flex items-center justify-between px-4 lg:px-10 bg-background/80 backdrop-blur-xl sticky top-0 z-40 w-full">
           <div className="flex items-center gap-2 lg:gap-6">
             <button
               onClick={() => setSidebarOpen(!isSidebarOpen)}
