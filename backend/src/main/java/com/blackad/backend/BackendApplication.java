@@ -31,7 +31,7 @@ public class BackendApplication {
                 admin.setUsername("admin");
                 admin.setPassword(passwordEncoder.encode("admin123"));
                 admin.setRole("admin");
-                admin.setIsActive(true);
+                admin.setIsActive(1);
                 userService.save(admin);
                 System.out.println("Admin user created with password admin123");
             }

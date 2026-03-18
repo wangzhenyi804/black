@@ -4,7 +4,7 @@ import api from '../api/client';
 interface User {
   username: string;
   role: string;
-  is_active: boolean;
+  is_active: number; // 1=Active, 0=Disabled, 3=Deleted
 }
 
 interface AuthContextType {

@@ -27,6 +27,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException("User not found with username: " + username);
         }
+        
+        // Check if user is active (isActive == 1)
+        boolean enabled = user.getIsActive() != null && user.getIsActive() == 1;
+        
         List<GrantedAuthority> authorities = new ArrayList<>();
         if (user.getRole() != null) {
             // Ensure role starts with ROLE_ for hasRole check, or use hasAuthority
@@ -36,6 +40,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             }
             authorities.add(new SimpleGrantedAuthority(roleName));
         }
-        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), authorities);
+        return new org.springframework.security.core.userdetails.User(
+            user.getUsername(), 
+            user.getPassword(), 
+            enabled, 
+            true, 
+            true, 
+            true, 
+            authorities
+        );
     }
 }

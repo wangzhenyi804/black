@@ -1,9 +1,10 @@
-import { Download, FileUp, Globe, Info, Plus, Search, Upload, X, Settings2, Trash2, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Download, FileUp, Globe, Info, Plus, Search, Upload, X, Settings2, Trash2, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import api from '../api/client';
 import Pagination from '../components/Pagination';
 import Select from '../components/Select';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -660,37 +661,12 @@ export default function Media() {
         </div>
       )}
       {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110] animate-in fade-in duration-200">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="p-3 bg-rose-500/10 rounded-full">
-                <AlertTriangle className="w-8 h-8 text-rose-500" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-text">确认删除?</h3>
-                <p className="text-sm text-text-muted">
-                  您确定要删除这个媒体吗？此操作无法撤销。
-                </p>
-              </div>
-              <div className="flex gap-3 w-full mt-2">
-                <button
-                  onClick={() => setDeleteConfirmId(null)}
-                  className="flex-1 py-2.5 text-sm font-bold text-text-muted bg-black/5 dark:bg-white/5 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 transition-all"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex-1 py-2.5 text-sm font-bold text-white bg-rose-500 rounded-xl hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all"
-                >
-                  确认删除
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={handleDelete}
+        description="您确定要删除这个媒体吗？此操作无法撤销。"
+      />
     </div>
   );
 }

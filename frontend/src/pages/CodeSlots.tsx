@@ -1,9 +1,10 @@
-import { ChevronRight, Code, Cpu, Download, FileUp, Globe, Layout, MousePointer2, Plus, Search, Settings2, Trash2, X, AlertTriangle } from 'lucide-react';
+import { ChevronRight, Code, Cpu, Download, FileUp, Globe, Layout, MousePointer2, Plus, Search, Settings2, Trash2, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useEffect, useState } from 'react';
 import api from '../api/client';
 import Pagination from '../components/Pagination';
 import Select from '../components/Select';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -50,7 +51,7 @@ export default function CodeSlots() {
   const toast = useToast();
   const [slots, setSlots] = useState<CodeSlot[]>([]);
   const [mediaList, setMediaList] = useState<Media[]>([]);
-  const [userList, setUserList] = useState<{id: number, username: string}[]>([]);
+  const [userList, setUserList] = useState<{id: number, username: string, is_active: number}[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ name: '', media_id: '', user_id: '', type: '全部', status: '全部' });
   const [pagination, setPagination] = useState({ current: 1, size: 10, total: 0 });
@@ -89,9 +90,9 @@ export default function CodeSlots() {
   }, [pagination.current, pagination.size]);
 
   const fetchUsers = () => {
-    api.get('/users?size=100').then(res => {
+    api.get('/users/all').then(res => {
       const data = res.data.data || res.data;
-      setUserList(data.records || data || []);
+      setUserList(data || []);
     });
   };
 
@@ -549,7 +550,7 @@ export default function CodeSlots() {
                       onChange={(val) => setFormData({ ...formData, user_id: Number(val) })}
                       options={[
                         { value: '', label: '默认 (当前管理员)' },
-                        ...userList.map(u => ({ value: u.id, label: u.username }))
+                        ...userList.filter(u => u.is_active === 1).map(u => ({ value: u.id, label: u.username }))
                       ]}
                       placeholder="选择归属用户"
                       className="bg-black/5 dark:bg-white/5"
@@ -826,37 +827,12 @@ export default function CodeSlots() {
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110] animate-in fade-in duration-200">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="p-3 bg-rose-500/10 rounded-full">
-                <AlertTriangle className="w-8 h-8 text-rose-500" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-text">确认删除?</h3>
-                <p className="text-sm text-text-muted">
-                  您确定要删除这个代码位吗？此操作无法撤销。
-                </p>
-              </div>
-              <div className="flex gap-3 w-full mt-2">
-                <button
-                  onClick={() => setDeleteConfirmId(null)}
-                  className="flex-1 py-2.5 text-sm font-bold text-text-muted bg-black/5 dark:bg-white/5 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 transition-all"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex-1 py-2.5 text-sm font-bold text-white bg-rose-500 rounded-xl hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all"
-                >
-                  确认删除
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={handleDelete}
+        description="您确定要删除这个代码位吗？此操作无法撤销。"
+      />
     </div>
   );
 }

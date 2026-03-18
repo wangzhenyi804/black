@@ -1,16 +1,17 @@
 import clsx from 'clsx';
-import { Edit2, Key, Plus, RefreshCw, Trash2, User, UserPlus, X, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Edit2, Key, Plus, RefreshCw, Trash2, User, UserPlus, X, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '../api/client';
 import Pagination from '../components/Pagination';
 import Select from '../components/Select';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { useToast } from '../context/ToastContext';
 
 interface User {
   id: number;
   username: string;
   role: string;
-  is_active: boolean;
+  is_active: number; // 1=Active, 0=Disabled, 3=Deleted
 }
 
 interface EditUserForm {
@@ -18,7 +19,7 @@ interface EditUserForm {
   username: string;
   password?: string;
   role: string;
-  is_active: boolean;
+  is_active: number;
 }
 
 export default function Users() {
@@ -82,7 +83,7 @@ export default function Users() {
     if (!editingUser) return;
     
     try {
-      const payload: Record<string, string | boolean> = {
+      const payload: Record<string, string | number> = {
         username: editingUser.username,
         role: editingUser.role,
         is_active: editingUser.is_active
@@ -140,6 +141,15 @@ export default function Users() {
       case 'admin': return 'text-primary border-primary/20 bg-primary/5';
       case 'user': return 'text-text-muted border-border bg-black/5 dark:bg-white/5';
       default: return 'text-text-muted border-border bg-black/5 dark:bg-white/5';
+    }
+  };
+
+  const getStatusConfig = (status: number) => {
+    switch (status) {
+      case 1: return { label: '正常运行', color: 'text-emerald-500', dot: 'bg-emerald-500' };
+      case 0: return { label: '已禁用', color: 'text-amber-500', dot: 'bg-amber-500' };
+      case 3: return { label: '已删除', color: 'text-rose-500', dot: 'bg-rose-500' };
+      default: return { label: '未知状态', color: 'text-text-muted', dot: 'bg-zinc-500' };
     }
   };
 
@@ -253,17 +263,22 @@ export default function Users() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={clsx(
-                      "inline-flex items-center gap-1.5 text-[10px] font-bold",
-                      u.is_active ? "text-emerald-500" : "text-text-muted"
-                    )}>
-                      <div className={clsx("w-1.5 h-1.5 rounded-full", u.is_active ? "bg-emerald-500" : "bg-zinc-600")} />
-                      {u.is_active ? '正常运行' : '已禁用'}
-                    </span>
+                    {(() => {
+                      const status = getStatusConfig(u.is_active);
+                      return (
+                        <span className={clsx(
+                          "inline-flex items-center gap-1.5 text-[10px] font-bold",
+                          status.color
+                        )}>
+                          <div className={clsx("w-1.5 h-1.5 rounded-full", status.dot)} />
+                          {status.label}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="flex justify-end items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {u.role !== 'admin' && (
+                      {u.role !== 'admin' && u.is_active !== 3 && (
                         <>
                           <button
                             onClick={() => setEditingUser({ ...u, password: '' })}
@@ -417,8 +432,8 @@ export default function Users() {
                   <input
                     type="checkbox"
                     className="h-5 w-5 rounded-lg border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary accent-primary"
-                    checked={editingUser.is_active}
-                    onChange={e => setEditingUser({ ...editingUser, is_active: e.target.checked })}
+                    checked={editingUser.is_active === 1}
+                    onChange={e => setEditingUser({ ...editingUser, is_active: e.target.checked ? 1 : 0 })}
                   />
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold text-text">账号启用状态</span>
@@ -447,37 +462,12 @@ export default function Users() {
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110] animate-in fade-in duration-200">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="p-3 bg-rose-500/10 rounded-full">
-                <AlertTriangle className="w-8 h-8 text-rose-500" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-text">确认删除?</h3>
-                <p className="text-sm text-text-muted">
-                  您确定要删除该用户吗？此操作无法撤销。
-                </p>
-              </div>
-              <div className="flex gap-3 w-full mt-2">
-                <button
-                  onClick={() => setDeleteConfirmId(null)}
-                  className="flex-1 py-2.5 text-sm font-bold text-text-muted bg-black/5 dark:bg-white/5 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 transition-all"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex-1 py-2.5 text-sm font-bold text-white bg-rose-500 rounded-xl hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all"
-                >
-                  确认删除
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={handleDelete}
+        description="您确定要删除该用户吗？此操作无法撤销。"
+      />
     </div>
   );
 }

@@ -23,6 +23,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blackad.backend.service.UserService;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -43,7 +45,15 @@ public class UserController {
     public IPage<User> getAllUsers(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return userService.page(new Page<>(page, size));
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.in("is_active", 0, 1);
+        return userService.page(new Page<>(page, size), queryWrapper);
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public java.util.List<User> getAllUsersWithoutPagination() {
+        return userService.list();
     }
 
     @PostMapping
@@ -74,10 +84,24 @@ public class UserController {
         return user;
     }
 
+    @Autowired
+    private com.blackad.backend.service.MediaService mediaService;
+
+    @Autowired
+    private com.blackad.backend.service.CodeSlotService codeSlotService;
+
+    @Autowired
+    private com.blackad.backend.service.StatsService statsService;
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteUser(@PathVariable Long id) {
-        userService.removeById(id);
+        // Logic delete: Set isActive to 3
+        User user = userService.getById(id);
+        if (user != null) {
+            user.setIsActive(3);
+            userService.updateById(user);
+        }
     }
 
     @PutMapping("/me/password")

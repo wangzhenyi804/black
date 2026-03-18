@@ -19,5 +19,5 @@ public class User implements Serializable {
     private String password; // Hashed
     
     private String role; // "admin" or "user"
-    private Boolean isActive;
+    private Integer isActive; // 1=Active, 0=Disabled, 3=Deleted
 }
