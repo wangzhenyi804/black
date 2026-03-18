@@ -91,6 +91,13 @@ export default function Login() {
   };
 
   useEffect(() => {
+    // Check if the user just logged out
+    const isLoggingOut = sessionStorage.getItem('is_logging_out');
+    if (isLoggingOut) {
+      sessionStorage.removeItem('is_logging_out');
+      return;
+    }
+
     const savedToken = localStorage.getItem('remembered_token');
     const savedRole = localStorage.getItem('remembered_role');
     const savedDeviceId = localStorage.getItem('device_id');

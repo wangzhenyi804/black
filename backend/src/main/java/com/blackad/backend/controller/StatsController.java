@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -206,6 +207,7 @@ public class StatsController {
 
         List<Stats> statsList = new ArrayList<>();
         int successCount = 0;
+        int skipCount = 0;
         int failCount = 0;
         List<String> errors = new ArrayList<>();
         
@@ -217,14 +219,26 @@ public class StatsController {
                 Stats s = new Stats();
                 if (isThirdPartyFormat) {
                     // Third-party format mapping
-                    String slotName = row.get("代码位");
-                    if (slotName == null || slotName.isEmpty()) {
+                    String slotNameStr = row.get("代码位");
+                    String codeSlotIdStr = row.get("代码位ID");
+                    
+                    if (slotNameStr == null || slotNameStr.isEmpty()) {
                         throw new IllegalArgumentException("缺少代码位名称");
                     }
                     
-                    com.blackad.backend.entity.CodeSlot slot = createdSlots.get(slotName);
+                    com.blackad.backend.entity.CodeSlot slot = null;
+                    
+                    // Try to find by code_slot_id first if provided
+                    if (codeSlotIdStr != null && !codeSlotIdStr.isEmpty()) {
+                        slot = codeSlotService.query().eq("code_slot_id", codeSlotIdStr).one();
+                    }
+                    
+                    // Fallback to name if not found by id
                     if (slot == null) {
-                        slot = codeSlotService.getByName(slotName);
+                        slot = createdSlots.get(slotNameStr);
+                        if (slot == null) {
+                            slot = codeSlotService.getByName(slotNameStr);
+                        }
                     }
                     
                     if (slot == null) {
@@ -251,7 +265,9 @@ public class StatsController {
                         }
                         
                         slot = new com.blackad.backend.entity.CodeSlot();
-                        slot.setName(slotName);
+                        slot.setName(slotNameStr);
+                        // Use provided code_slot_id or fallback to name
+                        slot.setCodeSlotId(codeSlotIdStr != null && !codeSlotIdStr.isEmpty() ? codeSlotIdStr : slotNameStr);
                         slot.setMediaId(media.getId());
                         slot.setUserId(media.getUserId());
                         slot.setTerminal("H5");
@@ -267,7 +283,7 @@ public class StatsController {
                         slot.setCreatedAt(LocalDateTime.now());
                         slot.setUpdatedAt(LocalDateTime.now());
                         codeSlotService.save(slot);
-                        createdSlots.put(slotName, slot);
+                        createdSlots.put(slotNameStr, slot);
                     }
                     
                     s.setCodeSlotId(slot.getId());
@@ -280,6 +296,18 @@ public class StatsController {
                     if (date == null) {
                         throw new IllegalArgumentException("日期格式无效: " + dateStr);
                     }
+                    
+                    // Check for duplicate data (same codeSlotId + date)
+                    long existingCount = statsService.query()
+                        .eq("code_slot_id", slot.getId())
+                        .eq("date", date)
+                        .count();
+                    
+                    if (existingCount > 0) {
+                        skipCount++;
+                        continue; // Skip this row, don't throw exception to avoid failing the whole batch
+                    }
+                    
                     s.setDate(date);
                     s.setCreateTime(LocalDateTime.now());
                     
@@ -296,6 +324,7 @@ public class StatsController {
                     Map<String, String> extra = new HashMap<>(row);
                     extra.remove("时间");
                     extra.remove("代码位");
+                    extra.remove("代码位ID");
                     extra.remove("展现");
                     extra.remove("点击");
                     extra.remove("收入");
@@ -307,17 +336,40 @@ public class StatsController {
                     if (date == null) {
                         throw new IllegalArgumentException("日期格式无效: " + dateStr);
                     }
-                    s.setDate(date);
-                    s.setCreateTime(LocalDateTime.now());
-                    Long slotId = Long.valueOf(row.get("codeSlotId"));
-                    s.setCodeSlotId(slotId);
                     
-                    // Fetch slot to get user/media context
-                    com.blackad.backend.entity.CodeSlot slot = codeSlotService.getById(slotId);
+                    String codeSlotIdStr = row.get("codeSlotId");
+                    
+                    // Look up the actual database ID using the logical codeSlotId
+                    com.blackad.backend.entity.CodeSlot slot = codeSlotService.query().eq("code_slot_id", codeSlotIdStr).one();
+                    
                     if (slot != null) {
+                        s.setCodeSlotId(slot.getId());
                         s.setUserId(slot.getUserId());
                         s.setMediaId(slot.getMediaId());
+                    } else {
+                        // Fallback: assume the CSV contains the primary key ID directly (legacy support)
+                        Long slotId = Long.valueOf(codeSlotIdStr);
+                        s.setCodeSlotId(slotId);
+                        slot = codeSlotService.getById(slotId);
+                        if (slot != null) {
+                            s.setUserId(slot.getUserId());
+                            s.setMediaId(slot.getMediaId());
+                        }
                     }
+                    
+                    // Check for duplicate data (same codeSlotId + date)
+                    long existingCount = statsService.query()
+                        .eq("code_slot_id", s.getCodeSlotId())
+                        .eq("date", date)
+                        .count();
+                    
+                    if (existingCount > 0) {
+                        skipCount++;
+                        continue; // Skip this row
+                    }
+                    
+                    s.setDate(date);
+                    s.setCreateTime(LocalDateTime.now());
                     
                     s.setImpressions(parseLongSafe(row.get("impressions")));
                     s.setClicks(parseLongSafe(row.get("clicks")));
@@ -357,7 +409,11 @@ public class StatsController {
         }
         
         response.put("success", true);
-        response.put("message", "成功导入 " + successCount + " 条记录。");
+        String msg = "成功导入 " + successCount + " 条记录。";
+        if (skipCount > 0) {
+            msg += " 跳过重复数据 " + skipCount + " 条。";
+        }
+        response.put("message", msg);
         if (failCount > 0) {
             response.put("warning", "失败: " + failCount + " 条。错误 (前5条): " + 
                        errors.stream().limit(5).collect(Collectors.joining("; ")));
@@ -397,29 +453,12 @@ public class StatsController {
         return null;
     }
 
-    @PutMapping("/{id}/ratio")
+    @DeleteMapping("/batch")
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Stats> updateRatio(@AuthenticationPrincipal UserDetails userDetails,
-                                           @PathVariable Long id,
-                                           @RequestBody Map<String, BigDecimal> body) {
-        User user = userService.query().eq("username", userDetails.getUsername()).one();
-        
-        BigDecimal newRatio = body.get("ratio");
-        if (newRatio == null) {
-            throw new IllegalArgumentException("Ratio is required");
+    public ResponseEntity<String> batchDeleteStats(@RequestBody List<Long> ids) {
+        if (ids != null && !ids.isEmpty()) {
+            statsService.removeByIds(ids);
         }
-
-        // Use updateWrapper to avoid NPE on null fields if using getById
-        com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper<Stats> uw = new com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper<>();
-        uw.eq("code_slot_id", id) // Note: Frontend sends codeSlotId, but path variable is {id}. Wait, frontend sends `/codeslots/{id}/ratio`.
-          // Ah, frontend calls `/codeslots/{id}/ratio`, which is handled by CodeSlotController, NOT StatsController.
-          // Let's check CodeSlotController.
-          ; 
-        
-        // This method seems unused by frontend "CodeSlotData.tsx" which calls `/codeslots/{id}/ratio`.
-        // However, if it IS used, we should fix it.
-        // Actually, let's fix CodeSlotController.
-        
-        return ResponseEntity.ok().build(); 
+        return ResponseEntity.ok("Deleted successfully");
     }
 }

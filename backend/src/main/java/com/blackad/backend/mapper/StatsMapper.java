@@ -26,8 +26,8 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "   MAX(cs.revenue_ratio) as ratio, " +
             "   SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) as afterSharingRevenue, " +
             "   IFNULL(SUM(s.clicks) / NULLIF(SUM(s.impressions), 0), 0) as ctr, " +
-            "   IFNULL(SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) * 1000 / NULLIF(SUM(s.impressions), 0), 0) as ecpm, " +
-            "   IFNULL(SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) / NULLIF(SUM(s.clicks), 0), 0) as acp " +
+            "   IFNULL(SUM(s.revenue) * 1000 / NULLIF(SUM(s.impressions), 0), 0) as ecpm, " +
+            "   IFNULL(SUM(s.revenue) / NULLIF(SUM(s.clicks), 0), 0) as acp " +
             "FROM stats s " +
             "LEFT JOIN code_slot cs ON s.code_slot_id = cs.id " +
             "WHERE 1=1 " +
@@ -51,8 +51,8 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "   AVG(IFNULL(cs.revenue_ratio, 1.0)) as ratio, " +
             "   SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) as afterSharingRevenue, " +
             "   IFNULL(SUM(s.clicks) / NULLIF(SUM(s.impressions), 0), 0) as ctr, " +
-            "   IFNULL(SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) * 1000 / NULLIF(SUM(s.impressions), 0), 0) as ecpm, " +
-            "   IFNULL(SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) / NULLIF(SUM(s.clicks), 0), 0) as acp, " +
+            "   IFNULL(SUM(s.revenue) * 1000 / NULLIF(SUM(s.impressions), 0), 0) as ecpm, " +
+            "   IFNULL(SUM(s.revenue) / NULLIF(SUM(s.clicks), 0), 0) as acp, " +
             "   IFNULL(SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) / NULLIF(DATEDIFF(MAX(s.date), MIN(s.date)) + 1, 0), 0) as dailyAvgRevenue " +
             "FROM stats s " +
             "LEFT JOIN code_slot cs ON s.code_slot_id = cs.id " +
@@ -75,8 +75,8 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "   SUM(s.revenue) as revenue, " +
             "   SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) as afterSharingRevenue, " +
             "   IFNULL(SUM(s.clicks) / NULLIF(SUM(s.impressions), 0), 0) as ctr, " +
-            "   IFNULL(SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) * 1000 / NULLIF(SUM(s.impressions), 0), 0) as ecpm, " +
-            "   IFNULL(SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) / NULLIF(SUM(s.clicks), 0), 0) as acp " +
+            "   IFNULL(SUM(s.revenue) * 1000 / NULLIF(SUM(s.impressions), 0), 0) as ecpm, " +
+            "   IFNULL(SUM(s.revenue) / NULLIF(SUM(s.clicks), 0), 0) as acp " +
             "FROM stats s " +
             "LEFT JOIN code_slot cs ON s.code_slot_id = cs.id " +
             "WHERE 1=1 " +
@@ -100,8 +100,8 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "   SUM(s.revenue) as revenue, " +
             "   SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) as afterSharingRevenue, " +
             "   IFNULL(SUM(s.clicks) / NULLIF(SUM(s.impressions), 0), 0) as ctr, " +
-            "   IFNULL(SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) * 1000 / NULLIF(SUM(s.impressions), 0), 0) as ecpm, " +
-            "   IFNULL(SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) / NULLIF(SUM(s.clicks), 0), 0) as acp " +
+            "   IFNULL(SUM(s.revenue) * 1000 / NULLIF(SUM(s.impressions), 0), 0) as ecpm, " +
+            "   IFNULL(SUM(s.revenue) / NULLIF(SUM(s.clicks), 0), 0) as acp " +
             "FROM stats s " +
             "LEFT JOIN code_slot cs ON s.code_slot_id = cs.id " +
             "WHERE 1=1 " +

@@ -70,6 +70,8 @@ export default function Media() {
 
   const [uploading, setUploading] = useState({ agent: false, copyright: false });
 
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
   useEffect(() => {
     fetchMedia();
   }, [page, size, filters.status]);
@@ -88,6 +90,7 @@ export default function Media() {
       });
       setMediaList(res.data.records || []);
       setTotal(res.data.total || 0);
+      setSelectedIds([]); // Clear selection on page change
     } catch (err) {
       console.error(err);
     } finally {
@@ -219,8 +222,16 @@ export default function Media() {
   const handleDelete = async () => {
     if (!deleteConfirmId) return;
     try {
-      await api.delete(`/media/${deleteConfirmId}`);
-      toast.success('媒体已删除');
+      if (deleteConfirmId === -1) {
+        // Batch delete
+        await api.delete('/media/batch', { data: selectedIds });
+        toast.success(`成功删除 ${selectedIds.length} 个媒体`);
+        setSelectedIds([]);
+      } else {
+        // Single delete
+        await api.delete(`/media/${deleteConfirmId}`);
+        toast.success('媒体已删除');
+      }
       fetchMedia();
     } catch (err: any) {
       const msg = err.response?.data?.message || err.response?.data || '删除失败';
@@ -228,6 +239,20 @@ export default function Media() {
     } finally {
       setDeleteConfirmId(null);
     }
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(mediaList.map(m => m.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const getStatusColor = (status: string) => {
@@ -254,6 +279,14 @@ export default function Media() {
             <h1 className="text-lg lg:text-xl font-bold text-text tracking-tight">媒体管理</h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            {selectedIds.length > 0 && (
+              <button
+                onClick={() => setDeleteConfirmId(-1)}
+                className="flex-1 sm:flex-none bg-rose-500/10 text-rose-500 px-3 lg:px-4 py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-rose-500/20 transition-all flex items-center justify-center gap-1.5 lg:gap-2"
+              >
+                <Trash2 size={14} className="lg:size-4" /> 批量删除 ({selectedIds.length})
+              </button>
+            )}
             <button
               onClick={handleExport}
               className="flex-1 sm:flex-none bg-black/5 dark:bg-white/5 text-text px-3 lg:px-4 py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all border border-border flex items-center justify-center gap-1.5 lg:gap-2"
@@ -348,6 +381,14 @@ export default function Media() {
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="sticky top-0 bg-black/5 dark:bg-white/5 backdrop-blur-md z-10 border-b border-border">
               <tr>
+                <th className="px-6 py-4 w-12">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                    checked={mediaList.length > 0 && selectedIds.length === mediaList.length}
+                    onChange={handleSelectAll}
+                  />
+                </th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">媒体名称</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">域名</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">分类</th>
@@ -358,12 +399,20 @@ export default function Media() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr><td colSpan={6} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
+                <tr><td colSpan={7} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
               ) : mediaList.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
+                <tr><td colSpan={7} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
               ) : (
                 mediaList.map((media) => (
                   <tr key={media.id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group">
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                        checked={selectedIds.includes(media.id)}
+                        onChange={() => handleSelectOne(media.id)}
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-primary font-bold border border-border">

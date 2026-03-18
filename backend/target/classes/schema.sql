@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS code_slot (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT,
     media_id BIGINT,
+    code_slot_id VARCHAR(100),
     name VARCHAR(255) NOT NULL,
     type VARCHAR(50),
     terminal VARCHAR(50),

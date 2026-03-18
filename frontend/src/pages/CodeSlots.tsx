@@ -11,6 +11,7 @@ import { useToast } from '../context/ToastContext';
 interface CodeSlot {
   id: number;
   media_id: number;
+  code_slot_id?: string; // Logical ID
   user_id?: number; // Added user_id
   name: string;
   type: string;
@@ -79,7 +80,9 @@ export default function CodeSlots() {
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null); // New state for editing
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleteStep, setDeleteStep] = useState<1 | 2>(1); // New state for double confirmation
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   useEffect(() => {
     fetchMedia();
@@ -134,6 +137,7 @@ export default function CodeSlots() {
     api.get('/codeslots', { params }).then(res => {
       setSlots(res.data.records || []);
       setPagination(prev => ({ ...prev, total: res.data.total || 0 }));
+      setSelectedIds([]); // Clear selection on page change
     }).finally(() => setLoading(false));
   };
 
@@ -247,16 +251,44 @@ export default function CodeSlots() {
 
   const handleDelete = async () => {
     if (!deleteConfirmId) return;
+    
+    if (deleteStep === 1) {
+      setDeleteStep(2);
+      return;
+    }
+
     try {
-      await api.delete(`/codeslots/${deleteConfirmId}`);
-      toast.success('删除成功');
+      if (deleteConfirmId === -1) {
+        // Batch delete
+        await api.delete('/codeslots/batch', { data: selectedIds });
+        toast.success(`成功删除 ${selectedIds.length} 个代码位`);
+        setSelectedIds([]);
+      } else {
+        await api.delete(`/codeslots/${deleteConfirmId}`);
+        toast.success('删除成功');
+      }
       fetchSlots();
     } catch (err: any) {
       const msg = err.response?.data?.message || err.response?.data || '删除失败';
       toast.error(msg);
     } finally {
       setDeleteConfirmId(null);
+      setDeleteStep(1);
     }
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(slots.map(s => s.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const handleGetCode = (code: string) => {
@@ -285,6 +317,17 @@ export default function CodeSlots() {
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
+          {selectedIds.length > 0 && isAdmin && (
+            <button
+              onClick={() => {
+                setDeleteConfirmId(-1);
+                setDeleteStep(1);
+              }}
+              className="flex-1 sm:flex-none bg-rose-500/10 text-rose-500 px-3 lg:px-4 py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-rose-500/20 transition-all flex items-center justify-center gap-1.5 lg:gap-2"
+            >
+              <Trash2 size={14} className="lg:size-4" /> 批量删除 ({selectedIds.length})
+            </button>
+          )}
           <button
             onClick={handleExport}
             className="flex-1 sm:flex-none bg-black/5 dark:bg-white/5 text-text px-3 lg:px-4 py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all border border-border flex items-center justify-center gap-1.5 lg:gap-2"
@@ -328,7 +371,7 @@ export default function CodeSlots() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted group-focus-within:text-primary transition-colors" />
               <input
                 type="text"
-                placeholder="搜索ID或名称..."
+                placeholder="搜索代码位ID或名称..."
                 className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl py-2 pl-9 pr-4 text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 value={filters.name}
                 onChange={e => setFilters({ ...filters, name: e.target.value })}
@@ -393,6 +436,16 @@ export default function CodeSlots() {
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-black/5 dark:bg-white/5 backdrop-blur-md z-10 border-b border-border">
               <tr>
+                {isAdmin && (
+                  <th className="px-6 py-4 w-12">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                      checked={slots.length > 0 && selectedIds.length === slots.length}
+                      onChange={handleSelectAll}
+                    />
+                  </th>
+                )}
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">代码位名称</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">所属媒体</th>
                 {isAdmin && <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">归属用户</th>}
@@ -404,14 +457,24 @@ export default function CodeSlots() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr><td colSpan={isAdmin ? 7 : 5} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
+                <tr><td colSpan={isAdmin ? 8 : 5} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
               ) : slots.length === 0 ? (
-                <tr><td colSpan={isAdmin ? 7 : 5} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
+                <tr><td colSpan={isAdmin ? 8 : 5} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
               ) : slots.map((slot) => {
                 const media = mediaList.find(m => m.id === slot.media_id);
                 const user = userList.find(u => u.id === slot.user_id);
                 return (
                   <tr key={slot.id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group">
+                    {isAdmin && (
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                          checked={selectedIds.includes(slot.id)}
+                          onChange={() => handleSelectOne(slot.id)}
+                        />
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-accent font-bold border border-border">
@@ -419,7 +482,7 @@ export default function CodeSlots() {
                         </div>
                         <div>
                           <p className="text-sm font-bold text-text">{slot.name}</p>
-                          <p className="text-[10px] text-text-muted font-mono">ID: {slot.id}</p>
+                          <p className="text-[10px] text-text-muted font-mono">代码位ID: {slot.code_slot_id || slot.id}</p>
                         </div>
                       </div>
                     </td>
@@ -466,7 +529,10 @@ export default function CodeSlots() {
                             <button 
                               className="p-2 rounded-lg text-rose-500/50 hover:bg-rose-500/10 hover:text-rose-500 transition-all" 
                               title="删除"
-                              onClick={() => setDeleteConfirmId(slot.id)}
+                              onClick={() => {
+                                setDeleteConfirmId(slot.id);
+                                setDeleteStep(1);
+                              }}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -829,9 +895,17 @@ export default function CodeSlots() {
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         isOpen={!!deleteConfirmId}
-        onClose={() => setDeleteConfirmId(null)}
+        onClose={() => {
+          setDeleteConfirmId(null);
+          setDeleteStep(1);
+        }}
         onConfirm={handleDelete}
-        description="您确定要删除这个代码位吗？此操作无法撤销。"
+        title={deleteStep === 1 ? '确认删除代码位?' : '最后确认'}
+        description={
+          deleteStep === 1 
+            ? '警告：删除代码位将一并删除其产生的所有数据！请确认是否继续。' 
+            : '您确定要删除这个代码位及其所有数据吗？此操作无法撤销。'
+        }
       />
     </div>
   );

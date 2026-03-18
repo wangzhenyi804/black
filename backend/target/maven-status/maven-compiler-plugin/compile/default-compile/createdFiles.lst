@@ -7,6 +7,7 @@ com/blackad/backend/entity/Stats.class
 com/blackad/backend/controller/StatsController.class
 com/blackad/backend/controller/UploadController.class
 com/blackad/backend/service/impl/CodeSlotServiceImpl.class
+com/blackad/backend/exception/GlobalExceptionHandler.class
 com/blackad/backend/mapper/MediaMapper.class
 com/blackad/backend/service/impl/StatsServiceImpl.class
 com/blackad/backend/dto/DashboardStatsDTO.class

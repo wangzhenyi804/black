@@ -104,6 +104,17 @@ public class UserController {
         }
     }
 
+    @DeleteMapping("/batch")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void batchDeleteUsers(@RequestBody java.util.List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return;
+        java.util.List<User> users = userService.listByIds(ids);
+        for (User user : users) {
+            user.setIsActive(3);
+        }
+        userService.updateBatchById(users);
+    }
+
     @PutMapping("/me/password")
     public void changePassword(@AuthenticationPrincipal UserDetails userDetails, @RequestBody Map<String, String> payload) {
         User user = userService.query().eq("username", userDetails.getUsername()).one();

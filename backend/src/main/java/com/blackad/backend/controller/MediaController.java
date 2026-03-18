@@ -134,6 +134,25 @@ public class MediaController {
         mediaService.removeById(id);
     }
 
+    @DeleteMapping("/batch")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void batchDeleteMedia(@AuthenticationPrincipal UserDetails userDetails, @RequestBody List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        
+        // Check if there are code slots associated with any of these media
+        long codeSlotCount = codeSlotService.query().in("media_id", ids).count();
+        // Check if there is data associated with any of these media
+        long statsCount = statsService.query().in("media_id", ids).count();
+        
+        if (codeSlotCount > 0 || statsCount > 0) {
+            throw new RuntimeException("选中的媒体下存在代码位/代码位数据禁止删除");
+        }
+
+        mediaService.removeByIds(ids);
+    }
+
     @GetMapping("/export")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<byte[]> exportMedia(

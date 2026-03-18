@@ -63,6 +63,12 @@ export default function Layout() {
 
   const handleLogout = () => {
     logout();
+    // Clear auto-login credentials
+    localStorage.removeItem('remembered_token');
+    localStorage.removeItem('remembered_role');
+    localStorage.removeItem('device_id');
+    // Set a flag to prevent immediate auto-login if any token remains (double safety)
+    sessionStorage.setItem('is_logging_out', 'true');
     navigate('/login');
   };
 

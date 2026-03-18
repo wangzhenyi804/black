@@ -32,6 +32,7 @@ export default function Users() {
   const [editingUser, setEditingUser] = useState<EditUserForm | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   useEffect(() => {
     fetchUsers();
@@ -57,6 +58,7 @@ export default function Users() {
       
       setUsers(records);
       setPagination(prev => ({ ...prev, total }));
+      setSelectedIds([]); // Clear selection
     } catch (err) {
       console.error('Fetch users error:', err);
     } finally {
@@ -105,8 +107,14 @@ export default function Users() {
   const handleDelete = async () => {
     if (!deleteConfirmId) return;
     try {
-      await api.delete(`/users/${deleteConfirmId}`);
-      toast.success('用户已成功删除');
+      if (deleteConfirmId === -1) {
+        await api.delete('/users/batch', { data: selectedIds });
+        toast.success(`成功删除 ${selectedIds.length} 个用户`);
+        setSelectedIds([]);
+      } else {
+        await api.delete(`/users/${deleteConfirmId}`);
+        toast.success('用户已成功删除');
+      }
       fetchUsers();
     } catch (err) {
       console.error('Delete user error:', err);
@@ -114,6 +122,22 @@ export default function Users() {
     } finally {
       setDeleteConfirmId(null);
     }
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      // Filter out admins if you don't want them to be easily batch deleted, or just select all.
+      // Assuming we can select all.
+      setSelectedIds(users.map(u => u.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const handleReset = async (e: React.FormEvent) => {
@@ -171,9 +195,22 @@ export default function Users() {
             </div>
             <h3 className="text-sm lg:text-lg font-bold text-text tracking-tight">创建新用户</h3>
           </div>
-          <button className="lg:hidden p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-all">
-            <ChevronRight className={clsx("w-4 h-4 text-text-muted transition-transform duration-300", isFormOpen ? "rotate-90" : "")} />
-          </button>
+          <div className="flex items-center gap-2">
+            {selectedIds.length > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteConfirmId(-1);
+                }}
+                className="bg-rose-500/10 text-rose-500 px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-rose-500/20 transition-all flex items-center justify-center gap-1.5 lg:gap-2"
+              >
+                <Trash2 size={14} className="lg:size-4" /> 批量删除 ({selectedIds.length})
+              </button>
+            )}
+            <button className="lg:hidden p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-all">
+              <ChevronRight className={clsx("w-4 h-4 text-text-muted transition-transform duration-300", isFormOpen ? "rotate-90" : "")} />
+            </button>
+          </div>
         </div>
         
         <div className={clsx(
@@ -234,6 +271,14 @@ export default function Users() {
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead className="bg-black/5 dark:bg-white/5 backdrop-blur-md sticky top-0 z-20">
               <tr>
+                <th className="px-6 py-4 w-12 border-b border-border">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                    checked={users.length > 0 && selectedIds.length === users.length}
+                    onChange={handleSelectAll}
+                  />
+                </th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">用户信息</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">角色</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">账号状态</th>
@@ -243,6 +288,14 @@ export default function Users() {
             <tbody className="divide-y divide-border">
               {users.map((u) => (
                 <tr key={u.id} className="group hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                      checked={selectedIds.includes(u.id)}
+                      onChange={() => handleSelectOne(u.id)}
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 ring-4 ring-primary/5">
@@ -277,7 +330,7 @@ export default function Users() {
                     })()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex justify-end items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex justify-end items-center gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
                       {u.role !== 'admin' && u.is_active !== 3 && (
                         <>
                           <button

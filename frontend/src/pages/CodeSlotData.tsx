@@ -117,11 +117,13 @@ export default function CodeSlotData() {
         toast.error(data.message || '导入失败');
       }
       fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('导入失败');
+      toast.error(err.response?.data || '导入失败');
     } finally {
       setLoading(false);
+      // Reset input value to allow uploading the same file again
+      e.target.value = '';
     }
   };
 

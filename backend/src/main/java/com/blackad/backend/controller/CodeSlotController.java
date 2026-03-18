@@ -73,13 +73,9 @@ public class CodeSlotController {
         if (StringUtils.hasText(name)) {
             String searchName = name.trim();
             queryWrapper.and(wrapper -> {
-                wrapper.like("name", searchName);
-                try {
-                    Long id = Long.valueOf(searchName);
-                    wrapper.or().eq("id", id);
-                } catch (NumberFormatException e) {
-                    // Not a number, only search by name
-                }
+                wrapper.like("name", searchName)
+                       .or()
+                       .like("code_slot_id", searchName);
             });
         }
         if (mediaId != null) queryWrapper.eq("media_id", mediaId);
@@ -201,13 +197,31 @@ public class CodeSlotController {
                 throw new AccessDeniedException("Access denied");
             }
             
-            // Check if there is data associated with this code slot
-            long statsCount = statsService.query().eq("code_slot_id", id).count();
-            if (statsCount > 0) {
-                throw new RuntimeException("该代码位下存在代码位数据禁止删除");
-            }
+            // Delete associated stats data directly
+            statsService.remove(new QueryWrapper<com.blackad.backend.entity.Stats>().eq("code_slot_id", id));
             
+            // Delete the code slot
             codeSlotService.removeById(id);
+        }
+    }
+
+    @DeleteMapping("/batch")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void batchDeleteCodeSlots(@AuthenticationPrincipal UserDetails userDetails, @RequestBody List<Long> ids) {
+        User user = userService.query().eq("username", userDetails.getUsername()).one();
+        
+        List<CodeSlot> existingSlots = codeSlotService.listByIds(ids);
+        for (CodeSlot existing : existingSlots) {
+            if (!"admin".equals(user.getRole()) && !existing.getUserId().equals(user.getId())) {
+                throw new AccessDeniedException("Access denied for one or more code slots");
+            }
+        }
+        
+        if (!ids.isEmpty()) {
+            // Delete associated stats data directly
+            statsService.remove(new QueryWrapper<com.blackad.backend.entity.Stats>().in("code_slot_id", ids));
+            // Delete the code slots
+            codeSlotService.removeByIds(ids);
         }
     }
 
@@ -232,13 +246,9 @@ public class CodeSlotController {
         if (StringUtils.hasText(name)) {
             String searchName = name.trim();
             query.and(wrapper -> {
-                wrapper.like("name", searchName);
-                try {
-                    Long id = Long.valueOf(searchName);
-                    wrapper.or().eq("id", id);
-                } catch (NumberFormatException e) {
-                    // Not a number, only search by name
-                }
+                wrapper.like("name", searchName)
+                       .or()
+                       .like("code_slot_id", searchName);
             });
         }
         if (mediaId != null) query.eq("media_id", mediaId);
@@ -265,32 +275,61 @@ public class CodeSlotController {
         String content = new String(file.getBytes(), StandardCharsets.UTF_8);
         List<Map<String, String>> data = CsvUtils.parseCsv(content);
 
-        List<CodeSlot> slotList = data.stream().map(row -> {
-            CodeSlot slot = new CodeSlot();
-            slot.setName(row.get("name"));
-            slot.setMediaId(row.get("mediaId") != null ? Long.valueOf(row.get("mediaId")) : null);
-            slot.setType(row.get("type"));
-            slot.setTerminal(row.get("terminal") != null ? row.get("terminal") : "H5");
-            slot.setDisplayType(row.get("displayType") != null ? row.get("displayType") : "固定块");
-            slot.setAdType(row.get("adType") != null ? row.get("adType") : "信息流");
-            slot.setAdForm(row.get("adForm") != null ? row.get("adForm") : "原生缩略图");
-            slot.setRatio(row.get("ratio") != null ? Integer.valueOf(row.get("ratio")) : 6);
-            slot.setStyleType(row.get("styleType") != null ? row.get("styleType") : "默认");
-            slot.setNote(row.get("note"));
-            slot.setImageUrl(row.get("imageUrl"));
-            slot.setIsShielding(row.get("isShielding") != null && Boolean.parseBoolean(row.get("isShielding")));
-            slot.setStatus(row.get("status") != null ? row.get("status") : "ACTIVE");
-            slot.setUserId(user.getId());
-            slot.setCreatedAt(LocalDateTime.now());
-            slot.setUpdatedAt(LocalDateTime.now());
-            
-            // Generate Code
-            String code = codeGenerationService.generateCode(slot);
-            slot.setCodeContent(code);
-            return slot;
-        }).collect(Collectors.toList());
+        int successCount = 0;
+        int failCount = 0;
 
-        codeSlotService.saveBatch(slotList);
-        return ResponseEntity.ok("成功导入 " + slotList.size() + " 条代码位信息");
+        for (Map<String, String> row : data) {
+            try {
+                String codeSlotId = row.get("codeSlotId");
+                String name = row.get("name");
+                
+                // Check for existing combination
+                long existing = codeSlotService.query()
+                        .eq("code_slot_id", codeSlotId)
+                        .eq("name", name)
+                        .count();
+                        
+                if (existing > 0) {
+                    failCount++;
+                    continue;
+                }
+
+                CodeSlot slot = new CodeSlot();
+                slot.setCodeSlotId(codeSlotId);
+                slot.setName(name);
+                slot.setMediaId(row.get("mediaId") != null ? Long.valueOf(row.get("mediaId")) : null);
+                slot.setType(row.get("type"));
+                slot.setTerminal(row.get("terminal") != null ? row.get("terminal") : "H5");
+                slot.setDisplayType(row.get("displayType") != null ? row.get("displayType") : "固定块");
+                slot.setAdType(row.get("adType") != null ? row.get("adType") : "信息流");
+                slot.setAdForm(row.get("adForm") != null ? row.get("adForm") : "原生缩略图");
+                slot.setRatio(row.get("ratio") != null ? Integer.valueOf(row.get("ratio")) : 6);
+                slot.setStyleType(row.get("styleType") != null ? row.get("styleType") : "默认");
+                slot.setNote(row.get("note"));
+                slot.setImageUrl(row.get("imageUrl"));
+                slot.setIsShielding(row.get("isShielding") != null && Boolean.parseBoolean(row.get("isShielding")));
+                slot.setStatus(row.get("status") != null ? row.get("status") : "ACTIVE");
+                slot.setUserId(user.getId());
+                slot.setCreatedAt(LocalDateTime.now());
+                slot.setUpdatedAt(LocalDateTime.now());
+                
+                codeSlotService.save(slot);
+                
+                // Generate Code
+                String code = codeGenerationService.generateCode(slot);
+                slot.setCodeContent(code);
+                codeSlotService.updateById(slot);
+                
+                successCount++;
+            } catch (Exception e) {
+                failCount++;
+            }
+        }
+
+        String msg = "成功导入 " + successCount + " 条代码位信息。";
+        if (failCount > 0) {
+            msg += " 失败（或重复） " + failCount + " 条。";
+        }
+        return ResponseEntity.ok(msg);
     }
 }

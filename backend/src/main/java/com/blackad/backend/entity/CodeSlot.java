@@ -15,6 +15,7 @@ public class CodeSlot implements Serializable {
     private Long id;
     private Long userId;
     private Long mediaId;
+    private String codeSlotId; // Logical ID (e.g., from external system)
     private String name;
     private String type; // Old type, maybe map to displayType?
     private String terminal; // "H5", "PC"
