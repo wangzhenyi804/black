@@ -11,6 +11,7 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
       # data-locations: classpath:data.sql, classpath:sql/update_codeslot_table.sql
       # Uncomment and update the above line to include your migration scripts during deployment
       # For example: data-locations: classpath:data.sql, file:/path/to/your/migration.sql
