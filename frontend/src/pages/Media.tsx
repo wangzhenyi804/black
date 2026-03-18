@@ -314,8 +314,8 @@ export default function Media() {
       </div>
 
       {/* Table Container */}
-      <div className="flex-1 bg-card rounded-3xl border border-border flex flex-col backdrop-blur-md">
-        <div className="flex-1 overflow-y-auto rounded-t-3xl">
+      <div className="flex-1 min-h-0 bg-card rounded-3xl border border-border flex flex-col backdrop-blur-md">
+        <div className="flex-1 overflow-y-auto min-h-0 rounded-t-3xl custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-black/5 dark:bg-white/5 backdrop-blur-md z-10 border-b border-border">
               <tr>

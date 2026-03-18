@@ -28,7 +28,7 @@ export default function Account() {
   };
 
   return (
-    <div className="max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="h-full overflow-y-auto custom-scrollbar pr-2 max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold tracking-tight text-text">账户设置</h1>
         <p className="text-sm text-text-muted">管理您的个人资料、安全偏好和账户信息。</p>

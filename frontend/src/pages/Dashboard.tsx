@@ -110,7 +110,7 @@ export default function Dashboard() {
   const activeMetricInfo = METRICS.find(m => m.key === activeMetric) || METRICS[0];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="h-full overflow-y-auto custom-scrollbar pr-2 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header Section */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
@@ -179,7 +179,7 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trendData}>
                 <defs>
-                  <linearGradient id="colorMetric" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id={`colorMetric-${activeMetric}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={activeMetricInfo.color} stopOpacity={0.3}/>
                     <stop offset="95%" stopColor={activeMetricInfo.color} stopOpacity={0}/>
                   </linearGradient>
@@ -214,9 +214,9 @@ export default function Dashboard() {
                   stroke={activeMetricInfo.color} 
                   strokeWidth={3} 
                   fillOpacity={1} 
-                  fill="url(#colorMetric)"
-                  dot={{ r: 4, fill: activeMetricInfo.color, strokeWidth: 2, stroke: 'var(--color-card)' }}
-                  activeDot={{ r: 6, strokeWidth: 0 }}
+                  fill={`url(#colorMetric-${activeMetric})`}
+                  dot={false}
+                  activeDot={{ r: 6, strokeWidth: 4, stroke: 'var(--color-card)' }}
                 />
               </AreaChart>
             </ResponsiveContainer>

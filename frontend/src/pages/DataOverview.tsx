@@ -89,7 +89,7 @@ export default function DataOverview() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const params: any = {
+      const params: Record<string, string | number | undefined> = {
         startDate: dateRange.start,
         endDate: dateRange.end,
         ...filters,
@@ -119,12 +119,12 @@ export default function DataOverview() {
         afterSharingRevenue: rawSummary.after_sharing_revenue || (rawSummary.revenue * (rawSummary.ratio || 1.0))
       });
 
-      setTrendData(trendRes.data.map((item: any) => ({
+      setTrendData(trendRes.data.map((item: StatsTrend & { after_sharing_revenue?: number; ratio?: number }) => ({
         ...item,
         afterSharingRevenue: item.after_sharing_revenue || (item.revenue * (item.ratio || 1.0))
       })));
 
-      setListData(listRes.data.records.map((item: any) => ({
+      setListData(listRes.data.records.map((item: StatsTrend & { after_sharing_revenue?: number; ratio?: number }) => ({
         ...item,
         afterSharingRevenue: item.after_sharing_revenue || (item.revenue * (item.ratio || 1.0))
       })));
@@ -188,7 +188,7 @@ export default function DataOverview() {
   };
 
   return (
-    <div className="flex flex-col h-full space-y-6">
+    <div className="flex flex-col h-full overflow-y-auto custom-scrollbar pr-2 space-y-6">
       {/* Header & Date Filter */}
       <div className="flex-shrink-0 bg-card border border-border p-4 rounded-2xl space-y-4 backdrop-blur-md relative z-30">
         <div className="flex flex-wrap items-center justify-between gap-4">

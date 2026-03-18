@@ -357,8 +357,8 @@ export default function CodeSlots() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 bg-card rounded-3xl border border-border overflow-hidden flex flex-col backdrop-blur-md">
-        <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 bg-card rounded-3xl border border-border overflow-hidden flex flex-col backdrop-blur-md">
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-black/5 dark:bg-white/5 backdrop-blur-md z-10 border-b border-border">
               <tr>

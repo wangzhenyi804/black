@@ -198,8 +198,8 @@ export default function Users() {
         </form>
       </div>
 
-      <div className="flex-1 bg-card border border-border rounded-2xl flex flex-col backdrop-blur-md">
-        <div className="flex-1 overflow-y-auto min-h-0 rounded-t-2xl">
+      <div className="flex-1 min-h-0 bg-card border border-border rounded-2xl flex flex-col backdrop-blur-md">
+        <div className="flex-1 overflow-y-auto min-h-0 rounded-t-2xl custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead className="bg-black/5 dark:bg-white/5 backdrop-blur-md sticky top-0 z-20">
               <tr>
