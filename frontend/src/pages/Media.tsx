@@ -1,5 +1,6 @@
-import { Download, FileUp, Globe, Info, Plus, Search, Upload, X, Settings2, Trash2, AlertTriangle } from 'lucide-react';
+import { Download, FileUp, Globe, Info, Plus, Search, Upload, X, Settings2, Trash2, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import clsx from 'clsx';
 import api from '../api/client';
 import Pagination from '../components/Pagination';
 import Select from '../components/Select';
@@ -46,6 +47,7 @@ export default function Media() {
     category: '全部',
     status: '全部'
   });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -83,8 +85,8 @@ export default function Media() {
           status: filters.status
         }
       });
-      setMediaList(res.data.records);
-      setTotal(res.data.total);
+      setMediaList(res.data.records || []);
+      setTotal(res.data.total || 0);
     } catch (err) {
       console.error(err);
     } finally {
@@ -96,6 +98,9 @@ export default function Media() {
     e.preventDefault();
     setPage(1);
     fetchMedia();
+    if (window.innerWidth < 1024) {
+      setIsFilterOpen(false);
+    }
   };
 
   const handleExport = async () => {
@@ -237,94 +242,115 @@ export default function Media() {
   return (
     <div className="flex flex-col h-full space-y-4 animate-in fade-in duration-500">
       {/* Header & Filter */}
-      <div className="flex-shrink-0 bg-card p-4 rounded-3xl border border-border space-y-4 backdrop-blur-md relative z-30">
-        <div className="flex items-center justify-between">
+      <div className="flex-shrink-0 bg-card p-4 lg:p-6 rounded-2xl lg:rounded-3xl border border-border space-y-4 backdrop-blur-md relative z-30 overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-xl">
-              <Globe className="w-5 h-5 text-primary" />
+            <div className="p-1.5 lg:p-2 bg-primary/10 rounded-xl">
+              <Globe className="w-4 h-4 lg:w-5 lg:h-5 text-primary" />
             </div>
-            <h1 className="text-xl font-bold text-text">媒体管理</h1>
+            <h1 className="text-lg lg:text-xl font-bold text-text tracking-tight">媒体管理</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={handleExport}
-              className="bg-black/5 dark:bg-white/5 text-text px-4 py-2 rounded-xl text-sm font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all border border-border flex items-center gap-2"
+              className="flex-1 sm:flex-none bg-black/5 dark:bg-white/5 text-text px-3 lg:px-4 py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all border border-border flex items-center justify-center gap-1.5 lg:gap-2"
             >
-              <Download size={16} /> 导出
+              <Download size={14} className="lg:size-4" /> 导出
             </button>
-            <label className="bg-black/5 dark:bg-white/5 text-text px-4 py-2 rounded-xl text-sm font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all border border-border flex items-center gap-2 cursor-pointer">
-              <FileUp size={16} /> 导入
+            <label className="flex-1 sm:flex-none bg-black/5 dark:bg-white/5 text-text px-3 lg:px-4 py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all border border-border flex items-center justify-center gap-1.5 lg:gap-2 cursor-pointer">
+              <FileUp size={14} className="lg:size-4" /> 导入
               <input type="file" className="hidden" accept=".csv" onChange={handleImport} />
             </label>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+              className="flex-1 sm:flex-none bg-primary text-white px-3 lg:px-4 py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-1.5 lg:gap-2"
             >
-              <Plus size={18} /> 新增媒体
+              <Plus size={16} className="lg:size-[18px]" /> 新增
             </button>
           </div>
         </div>
 
-        <form onSubmit={handleSearch} className="flex flex-wrap items-center gap-4">
-          <div className="relative group flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
-            <input
-              type="text"
-              placeholder="按名称搜索..."
-              className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl py-2 pl-10 pr-4 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              value={filters.name}
-              onChange={e => setFilters({ ...filters, name: e.target.value })}
-            />
-          </div>
-          <div className="w-full sm:w-auto min-w-[140px]">
-            <Select
-              value={filters.category}
-              onChange={(val) => setFilters({ ...filters, category: String(val) })}
-              options={CATEGORIES.map(c => ({ value: c, label: c === '全部' ? '所有分类' : c }))}
-              placeholder="所有分类"
-              className="bg-black/5 dark:bg-white/5"
-            />
-          </div>
-          <button
-            type="submit"
-            className="bg-black/5 dark:bg-white/5 text-text px-6 py-2 rounded-xl text-sm font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all border border-border"
+        <div className="lg:hidden">
+          <button 
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className="w-full flex items-center justify-between px-4 py-2.5 bg-black/5 dark:bg-white/5 border border-border rounded-xl text-xs font-bold text-text-muted"
           >
-            查询
+            <div className="flex items-center gap-2">
+              <Search size={14} />
+              <span>数据筛选</span>
+            </div>
+            <ChevronRight size={14} className={clsx("transition-transform duration-300", isFilterOpen ? "rotate-90" : "")} />
           </button>
-        </form>
+        </div>
 
-        <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-          {STATUS_TABS.map(tab => (
-            <button
-              key={tab}
-              onClick={() => {
-                setFilters({ ...filters, status: tab });
-                setPage(1);
-              }}
-              className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all border ${
-                filters.status === tab
-                  ? 'bg-primary/10 text-primary border-primary/20'
-                  : 'text-text-muted border-transparent hover:bg-black/5 dark:hover:bg-white/5 hover:text-text'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+        <div className={clsx(
+          "transition-all duration-300 ease-in-out lg:block lg:opacity-100",
+          isFilterOpen ? "opacity-100 max-h-[500px]" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden"
+        )}>
+          <div className="space-y-4 pt-4 lg:pt-0">
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 lg:gap-4">
+              <div className="relative group flex-1 max-w-none sm:max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted group-focus-within:text-primary transition-colors" />
+                <input
+                  type="text"
+                  placeholder="按名称搜索..."
+                  className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl py-2 pl-9 pr-4 text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                  value={filters.name}
+                  onChange={e => setFilters({ ...filters, name: e.target.value })}
+                />
+              </div>
+              <div className="w-full sm:w-auto min-w-[120px] lg:min-w-[140px]">
+                <Select
+                  value={filters.category}
+                  onChange={(val) => setFilters({ ...filters, category: String(val) })}
+                  options={CATEGORIES.map(c => ({ value: c, label: c === '全部' ? '所有分类' : c }))}
+                  placeholder="所有分类"
+                  className="bg-black/5 dark:bg-white/5"
+                  size="sm"
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-black/5 dark:bg-white/5 text-text px-6 py-2 rounded-xl text-xs lg:text-sm font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all border border-border"
+              >
+                查询
+              </button>
+            </form>
+
+            <div className="flex flex-wrap gap-1.5 lg:gap-2 pt-2 border-t border-border overflow-x-auto no-scrollbar pb-1">
+              {STATUS_TABS.map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => {
+                    setFilters({ ...filters, status: tab });
+                    setPage(1);
+                  }}
+                  className={`whitespace-nowrap px-3 lg:px-4 py-1.5 text-[10px] lg:text-xs font-bold rounded-xl transition-all border ${
+                    filters.status === tab
+                      ? 'bg-primary/10 text-primary border-primary/20'
+                      : 'text-text-muted border-transparent hover:bg-black/5 dark:hover:bg-white/5 hover:text-text'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Table Container */}
-      <div className="flex-1 min-h-0 bg-card rounded-3xl border border-border flex flex-col backdrop-blur-md">
-        <div className="flex-1 overflow-y-auto min-h-0 rounded-t-3xl custom-scrollbar">
-          <table className="w-full text-left border-collapse">
+      <div className="flex-1 min-h-0 bg-card rounded-2xl lg:rounded-3xl border border-border flex flex-col backdrop-blur-md overflow-hidden">
+        <div className="flex-1 overflow-auto min-h-0 rounded-t-2xl lg:rounded-t-3xl custom-scrollbar">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="sticky top-0 bg-black/5 dark:bg-white/5 backdrop-blur-md z-10 border-b border-border">
               <tr>
-                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">媒体名称</th>
-                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">域名</th>
-                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">分类</th>
-                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">状态</th>
-                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider">创建时间</th>
-                <th className="px-6 py-4 text-xs font-bold text-text-muted uppercase tracking-wider text-right">操作</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">媒体名称</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">域名</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">分类</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">状态</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">创建时间</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider text-right">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -378,7 +404,7 @@ export default function Media() {
           </table>
         </div>
         
-        <div className="flex-shrink-0 border-t border-border p-4 bg-black/5 dark:bg-white/5 rounded-b-3xl">
+        <div className="flex-shrink-0 border-t border-border p-4 bg-black/5 dark:bg-white/5 rounded-b-2xl lg:rounded-b-3xl">
           <Pagination
             current={page}
             size={size}

@@ -119,16 +119,16 @@ export default function DataOverview() {
         afterSharingRevenue: rawSummary.after_sharing_revenue || (rawSummary.revenue * (rawSummary.ratio || 1.0))
       });
 
-      setTrendData(trendRes.data.map((item: StatsTrend & { after_sharing_revenue?: number; ratio?: number }) => ({
+      setTrendData((trendRes.data || []).map((item: StatsTrend & { after_sharing_revenue?: number; ratio?: number }) => ({
         ...item,
         afterSharingRevenue: item.after_sharing_revenue || (item.revenue * (item.ratio || 1.0))
       })));
 
-      setListData(listRes.data.records.map((item: StatsTrend & { after_sharing_revenue?: number; ratio?: number }) => ({
+      setListData((listRes.data.records || []).map((item: StatsTrend & { after_sharing_revenue?: number; ratio?: number }) => ({
         ...item,
         afterSharingRevenue: item.after_sharing_revenue || (item.revenue * (item.ratio || 1.0))
       })));
-      setPagination(prev => ({ ...prev, total: listRes.data.total }));
+      setPagination(prev => ({ ...prev, total: listRes.data.total || 0 }));
     } catch (err) {
       console.error(err);
     } finally {

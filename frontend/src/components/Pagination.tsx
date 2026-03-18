@@ -36,7 +36,8 @@ export default function Pagination({
 
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
-    const showPages = 5; // Number of page numbers to show (excluding first, last and ellipsis)
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    const showPages = isMobile ? 3 : 5; // Fewer pages on mobile
 
     if (totalPages <= showPages + 2) {
       for (let i = 1; i <= totalPages; i++) {
@@ -46,8 +47,9 @@ export default function Pagination({
       // Always show first page
       pages.push(1);
 
-      const left = Math.max(2, current - 2);
-      const right = Math.min(totalPages - 1, current + 2);
+      const buffer = isMobile ? 1 : 2;
+      const left = Math.max(2, current - buffer);
+      const right = Math.min(totalPages - 1, current + buffer);
 
       if (left > 2) {
         pages.push('...');
@@ -69,15 +71,17 @@ export default function Pagination({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 bg-transparent border-t border-border">
-      <div className="flex items-center gap-4 text-xs text-text-muted order-2 sm:order-1 font-medium">
-        <p>
-          显示 <span className="text-text font-bold">{start}</span> 到 <span className="text-text font-bold">{end}</span> 条，
-          共 <span className="text-primary font-bold">{total}</span> 条数据
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-3 py-3 sm:px-4 sm:py-4 bg-transparent border-t border-border">
+      {/* Stats and Page Size - More compact on mobile */}
+      <div className="flex items-center gap-3 sm:gap-4 text-[10px] sm:text-xs text-text-muted order-2 sm:order-1 font-medium w-full sm:w-auto justify-between sm:justify-start border-t border-border/5 pt-3 sm:pt-0 sm:border-t-0">
+        <p className="whitespace-nowrap">
+          <span className="hidden xs:inline">显示</span> <span className="text-text font-bold">{start}-{end}</span>
+          <span className="hidden xs:inline"> / 共 <span className="text-primary font-bold">{total}</span> 条</span>
+          <span className="xs:hidden"> / {total}</span>
         </p>
-        <div className="flex items-center gap-2">
-          <span className="opacity-60">每页</span>
-          <div className="w-20">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <span className="opacity-60 hidden sm:inline">每页</span>
+          <div className="w-14 sm:w-20">
             <Select
               value={size}
               onChange={(val) => onSizeChange(Number(val))}
@@ -85,31 +89,32 @@ export default function Pagination({
               size="sm"
             />
           </div>
-          <span className="opacity-60">条</span>
+          <span className="opacity-60 hidden sm:inline">条</span>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-3 order-1 sm:order-2">
+      {/* Navigation and Jump - More compact on mobile */}
+      <div className="flex items-center justify-center gap-2 sm:gap-3 order-1 sm:order-2 w-full sm:w-auto">
         <nav className="inline-flex gap-1" aria-label="Pagination">
           <button
             onClick={() => onPageChange(Math.max(1, current - 1))}
             disabled={current === 1}
-            className="relative inline-flex items-center p-2 text-text-muted bg-black/5 dark:bg-white/5 border border-border rounded-xl hover:bg-black/10 dark:hover:bg-white/10 hover:text-text disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+            className="relative inline-flex items-center p-1.5 sm:p-2 text-text-muted bg-black/5 dark:bg-white/5 border border-border rounded-lg sm:rounded-xl hover:bg-black/10 dark:hover:bg-white/10 hover:text-text disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
 
           <div className="flex items-center gap-1">
             {getPageNumbers().map((page, index) => (
               <React.Fragment key={index}>
                 {page === '...' ? (
-                  <span className="relative inline-flex items-center px-3 py-2 text-sm font-medium text-text-muted">
-                    <MoreHorizontal className="h-4 w-4" />
+                  <span className="relative inline-flex items-center px-1.5 sm:px-3 py-1 sm:py-2 text-xs font-medium text-text-muted">
+                    <MoreHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </span>
                 ) : (
                   <button
                     onClick={() => onPageChange(page as number)}
-                    className={`relative inline-flex items-center min-w-[36px] h-8 justify-center px-2 py-2 text-xs font-bold rounded-xl transition-all active:scale-95 ${
+                    className={`relative inline-flex items-center min-w-[28px] sm:min-w-[36px] h-7 sm:h-8 justify-center px-1.5 py-1 text-[10px] sm:text-xs font-bold rounded-lg sm:rounded-xl transition-all active:scale-95 ${
                       current === page
                         ? 'z-10 bg-primary text-white shadow-lg shadow-primary/20'
                         : 'bg-black/5 dark:bg-white/5 border border-border text-text-muted hover:bg-black/10 dark:hover:bg-white/10 hover:text-text hover:border-primary/30'
@@ -125,22 +130,23 @@ export default function Pagination({
           <button
             onClick={() => onPageChange(Math.min(totalPages, current + 1))}
             disabled={current === totalPages || totalPages === 0}
-            className="relative inline-flex items-center p-2 text-text-muted bg-black/5 dark:bg-white/5 border border-border rounded-xl hover:bg-black/10 dark:hover:bg-white/10 hover:text-text disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+            className="relative inline-flex items-center p-1.5 sm:p-2 text-text-muted bg-black/5 dark:bg-white/5 border border-border rounded-lg sm:rounded-xl hover:bg-black/10 dark:hover:bg-white/10 hover:text-text disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
         </nav>
 
-        <form onSubmit={handleJump} className="flex items-center gap-2 ml-2">
-          <span className="text-xs text-text-muted font-medium opacity-60">跳至</span>
+        {/* Jump input hidden on very small screens or simplified */}
+        <form onSubmit={handleJump} className="hidden xs:flex items-center gap-1.5 sm:gap-2 ml-1 sm:ml-2">
+          <span className="text-[10px] sm:text-xs text-text-muted font-medium opacity-60 hidden sm:inline">跳至</span>
           <input
             type="text"
             value={jumpTo}
             onChange={(e) => setJumpTo(e.target.value.replace(/\D/g, ''))}
-            className="w-12 h-8 px-1 text-center bg-black/5 dark:bg-white/5 border border-border rounded-xl text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted/30 font-bold"
-            placeholder="页码"
+            className="w-10 sm:w-12 h-7 sm:h-8 px-1 text-center bg-black/5 dark:bg-white/5 border border-border rounded-lg sm:rounded-xl text-[10px] sm:text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted/30 font-bold"
+            placeholder="页"
           />
-          <span className="text-xs text-text-muted font-medium opacity-60">页</span>
+          <span className="text-[10px] sm:text-xs text-text-muted font-medium opacity-60 hidden sm:inline">页</span>
         </form>
       </div>
     </div>

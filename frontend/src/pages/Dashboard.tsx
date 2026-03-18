@@ -110,39 +110,39 @@ export default function Dashboard() {
   const activeMetricInfo = METRICS.find(m => m.key === activeMetric) || METRICS[0];
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar pr-2 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="h-full overflow-y-auto custom-scrollbar pr-0 lg:pr-2 space-y-6 lg:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header Section */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <LayoutDashboard className="w-6 h-6 text-primary" />
+          <div className="p-1.5 lg:p-2 bg-primary/10 rounded-lg">
+            <LayoutDashboard className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-text tracking-tight">总览</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-text tracking-tight">总览</h1>
         </div>
-        <p className="text-text-muted text-sm ml-11">
+        <p className="text-text-muted text-xs lg:text-sm ml-0 lg:ml-11 mt-1 lg:mt-0">
           欢迎回来，<span className="text-text font-medium">{user?.username}</span>。这里是您应用的最新表现数据。
         </p>
       </div>
 
       {/* Overview Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         {[
           { label: '昨日分成后收入', value: stats?.yesterdayAfterSharingRevenue || 0, icon: Wallet, color: 'text-blue-500', bg: 'bg-blue-500/10' },
           { label: '最近7天分成后收入', value: stats?.last7DaysAfterSharingRevenue || 0, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
           { label: '本月累计分成后收入', value: stats?.thisMonthAfterSharingRevenue || 0, icon: Calendar, color: 'text-amber-500', bg: 'bg-amber-500/10' },
           { label: '最近7日日均预估', value: stats?.last7DaysAvgRevenue || 0, icon: ArrowUpRight, color: 'text-purple-500', bg: 'bg-purple-500/10' },
         ].map((item, idx) => (
-          <div key={idx} className="bg-card p-6 rounded-3xl border border-border hover:border-primary/20 transition-all group relative overflow-hidden backdrop-blur-sm">
+          <div key={idx} className="bg-card p-4 lg:p-6 rounded-2xl lg:rounded-3xl border border-border hover:border-primary/20 transition-all group relative overflow-hidden backdrop-blur-sm">
             <div className="relative z-10">
-              <div className={clsx("w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-300", item.bg)}>
-                <item.icon className={clsx("w-6 h-6", item.color)} />
+              <div className={clsx("w-10 h-10 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl flex items-center justify-center mb-3 lg:mb-4 transition-transform group-hover:scale-110 duration-300", item.bg)}>
+                <item.icon className={clsx("w-5 h-5 lg:w-6 lg:h-6", item.color)} />
               </div>
-              <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1">{item.label}</p>
+              <p className="text-[10px] lg:text-xs font-bold text-text-muted uppercase tracking-wider mb-1">{item.label}</p>
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-text">¥{item.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="text-xl lg:text-2xl font-bold text-text">¥{item.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
-            <div className={clsx("absolute -right-4 -bottom-4 w-24 h-24 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500", item.bg)}></div>
+            <div className={clsx("absolute -right-4 -bottom-4 w-20 h-20 lg:w-24 lg:h-24 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500", item.bg)}></div>
           </div>
         ))}
       </div>
@@ -150,32 +150,32 @@ export default function Dashboard() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart Section */}
-        <div className="lg:col-span-2 bg-card p-6 rounded-3xl border border-border flex flex-col backdrop-blur-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div className="lg:col-span-2 bg-card p-4 lg:p-6 rounded-2xl lg:rounded-3xl border border-border flex flex-col backdrop-blur-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 lg:mb-8">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-bold text-text">趋势分析</h2>
+              <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 text-primary" />
+              <h2 className="text-lg lg:text-xl font-bold text-text">趋势分析</h2>
             </div>
-            <div className="flex bg-black/5 dark:bg-white/5 p-1.5 rounded-2xl border border-border">
+            <div className="flex flex-wrap bg-black/5 dark:bg-white/5 p-1 rounded-xl lg:rounded-2xl border border-border">
               {METRICS.map(m => (
                 <button
                   key={m.key}
                   onClick={() => setActiveMetric(m.key)}
                   className={clsx(
-                    "px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all",
+                    "px-3 lg:px-4 py-1.5 rounded-lg lg:rounded-xl text-[10px] lg:text-xs font-bold flex items-center gap-1.5 lg:gap-2 border transition-all",
                     activeMetric === m.key 
                       ? clsx('bg-white dark:bg-primary/20 shadow-lg border-transparent', m.textColor)
                       : 'text-text-muted border-transparent hover:bg-black/5 dark:hover:bg-white/5 hover:text-text'
                   )}
                 >
-                  <m.icon className={clsx("w-3.5 h-3.5", activeMetric === m.key ? m.textColor : "text-text-muted/50")} />
+                  <m.icon className={clsx("w-3 h-3 lg:w-3.5 lg:h-3.5", activeMetric === m.key ? m.textColor : "text-text-muted/50")} />
                   {m.label}
                 </button>
               ))}
             </div>
           </div>
           
-          <div className="h-80 w-full">
+          <div className="h-64 lg:h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trendData}>
                 <defs>
@@ -191,6 +191,7 @@ export default function Dashboard() {
                   tickLine={false} 
                   tick={{ fill: 'var(--color-text-muted)', fontSize: 10 }}
                   dy={10}
+                  minTickGap={30}
                 />
                 <YAxis 
                   axisLine={false} 
@@ -225,23 +226,23 @@ export default function Dashboard() {
 
         {/* Status/Insights Side Section */}
         <div className="space-y-6">
-          <div className="bg-card p-6 rounded-3xl border border-border flex-1 min-h-[220px] flex flex-col backdrop-blur-sm">
-            <h3 className="text-sm font-bold text-text mb-6 flex items-center gap-2">
+          <div className="bg-card p-4 lg:p-6 rounded-2xl lg:rounded-3xl border border-border flex-1 min-h-[220px] flex flex-col backdrop-blur-sm">
+            <h3 className="text-xs lg:text-sm font-bold text-text mb-4 lg:mb-6 flex items-center gap-2">
               <Activity className="w-4 h-4 text-accent" />
               快速数据汇总
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 lg:space-y-4">
               {[
                 { label: '活跃代码位', value: stats?.activeCodeSlots || '0', color: 'text-blue-500', icon: Layout },
                 { label: '待审核', value: stats?.pendingAudit || '0', color: 'text-amber-500', icon: Shield },
                 { label: '平均点击率', value: `${((stats?.avgCtr || 0) * 100).toFixed(2)}%`, color: 'text-emerald-500', icon: Target },
               ].map((stat, i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-border hover:border-primary/20 transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <stat.icon className="w-4 h-4 text-text-muted group-hover:text-text transition-colors" />
-                    <span className="text-sm text-text-muted group-hover:text-text transition-colors">{stat.label}</span>
+                <div key={i} className="flex items-center justify-between p-3 lg:p-4 bg-black/5 dark:bg-white/5 rounded-xl lg:rounded-2xl border border-border hover:border-primary/20 transition-colors group">
+                  <div className="flex items-center gap-2 lg:gap-3">
+                    <stat.icon className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-text-muted group-hover:text-text transition-colors" />
+                    <span className="text-xs lg:text-sm text-text-muted group-hover:text-text transition-colors">{stat.label}</span>
                   </div>
-                  <span className={clsx("font-bold", stat.color)}>{stat.value}</span>
+                  <span className={clsx("text-sm lg:text-base font-bold", stat.color)}>{stat.value}</span>
                 </div>
               ))}
             </div>

@@ -21,17 +21,37 @@ export default function Layout() {
   const { user, logout, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024 ? false : localStorage.getItem('sidebarCollapsed') === 'true';
+    }
+    return false;
+  });
   const [isHovered, setIsHovered] = useState(false);
   const [isAdMenuOpen, setAdMenuOpen] = useState(true);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
-  const effectiveCollapsed = isCollapsed && !isHovered;
+  const effectiveCollapsed = isCollapsed && !isHovered && window.innerWidth >= 1024;
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setIsCollapsed(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', String(isCollapsed));
   }, [isCollapsed]);
+
+  useEffect(() => {
+    // Close sidebar when route changes on mobile
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -64,15 +84,23 @@ export default function Layout() {
     );
 
   return (
-    <div className="h-screen bg-background text-text flex overflow-hidden font-sans">
+    <div className="h-screen bg-background text-text flex overflow-hidden font-sans relative">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden transition-opacity duration-300"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         onMouseEnter={() => isCollapsed && setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 bg-sidebar border-r border-border transform transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] lg:relative lg:translate-x-0 flex flex-col",
+          "fixed inset-y-0 left-0 z-50 bg-sidebar border-r border-border transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] lg:relative flex flex-col",
           effectiveCollapsed ? "w-20" : "w-64",
-          !isSidebarOpen && "-translate-x-full"
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
         <div className={clsx("h-24 flex items-center gap-3 transition-all duration-500", effectiveCollapsed ? "px-4 justify-center" : "px-8")}>
@@ -181,14 +209,14 @@ export default function Layout() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-background transition-all duration-500">
-        <header className="h-20 border-b border-border flex items-center justify-between px-6 lg:px-10 bg-background/80 backdrop-blur-xl sticky top-0 z-40">
-          <div className="flex items-center gap-6">
+      <div className="flex-1 flex flex-col min-w-0 bg-background transition-all duration-500 overflow-hidden">
+        <header className="h-16 lg:h-20 border-b border-border flex items-center justify-between px-4 lg:px-10 bg-background/80 backdrop-blur-xl sticky top-0 z-40">
+          <div className="flex items-center gap-2 lg:gap-6">
             <button
               onClick={() => setSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden p-2 rounded-2xl text-text-muted hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+              className="lg:hidden p-2 rounded-xl text-text-muted hover:bg-black/5 dark:hover:bg-white/5 transition-all"
             >
-              {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+              <Menu size={22} />
             </button>
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
@@ -202,32 +230,32 @@ export default function Layout() {
           
           <div className="flex-1" />
 
-          <div className="flex items-center gap-4">
-            <button className="p-2.5 rounded-xl text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text transition-all relative">
+          <div className="flex items-center gap-2 lg:gap-4">
+            <button className="hidden sm:flex p-2.5 rounded-xl text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text transition-all relative">
               <Bell size={20} />
               <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full border-2 border-background"></span>
             </button>
-          <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-2xl border border-border">
-            <button
-              onClick={() => setTheme('light')}
-              className={clsx(
-                "p-1.5 rounded-xl transition-all",
-                theme === 'light' ? "bg-white text-primary shadow-sm" : "text-text-muted hover:text-text"
-              )}
-            >
-              <Sun size={18} />
-            </button>
-            <button
-              onClick={() => setTheme('dark')}
-              className={clsx(
-                "p-1.5 rounded-xl transition-all",
-                theme === 'dark' ? "bg-zinc-800 text-primary shadow-sm shadow-black/20" : "text-text-muted hover:text-text"
-              )}
-            >
-              <Moon size={18} />
-            </button>
-          </div>
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/20 ring-4 ring-primary/5">
+            <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl lg:rounded-2xl border border-border scale-90 lg:scale-100">
+              <button
+                onClick={() => setTheme('light')}
+                className={clsx(
+                  "p-1.5 rounded-lg lg:rounded-xl transition-all",
+                  theme === 'light' ? "bg-white text-primary shadow-sm" : "text-text-muted hover:text-text"
+                )}
+              >
+                <Sun size={16} className="lg:size-[18px]" />
+              </button>
+              <button
+                onClick={() => setTheme('dark')}
+                className={clsx(
+                  "p-1.5 rounded-lg lg:rounded-xl transition-all",
+                  theme === 'dark' ? "bg-zinc-800 text-primary shadow-sm shadow-black/20" : "text-text-muted hover:text-text"
+                )}
+              >
+                <Moon size={16} className="lg:size-[18px]" />
+              </button>
+            </div>
+            <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/20 ring-4 ring-primary/5 text-sm lg:text-base">
               {user?.username?.charAt(0).toUpperCase() || 'U'}
             </div>
           </div>
@@ -235,7 +263,7 @@ export default function Layout() {
 
         {/* Content Area */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 flex flex-col min-h-0 p-6 lg:p-8">
+          <div className="flex-1 flex flex-col min-h-0 p-4 lg:p-8">
             <Outlet />
           </div>
         </main>

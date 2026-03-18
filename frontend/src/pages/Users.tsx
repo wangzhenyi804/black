@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Edit2, Key, Plus, RefreshCw, Trash2, User, UserPlus, X } from 'lucide-react';
+import { Edit2, Key, Plus, RefreshCw, Trash2, User, UserPlus, X, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '../api/client';
 import Pagination from '../components/Pagination';
@@ -29,6 +29,7 @@ export default function Users() {
   const [formData, setFormData] = useState({ username: '', password: '', role: 'user' });
   const [resetPwd, setResetPwd] = useState({ userId: 0, newPassword: '' });
   const [editingUser, setEditingUser] = useState<EditUserForm | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -65,6 +66,7 @@ export default function Users() {
     e.preventDefault();
     try {
       await api.post('/users', formData);
+      setIsFormOpen(false);
       setFormData({ username: '', password: '', role: 'user' });
       toast.success('用户创建成功');
       fetchUsers();
@@ -123,84 +125,100 @@ export default function Users() {
   };
 
   const getRoleLabel = (role: string) => {
-    switch (role?.toLowerCase()) {
-      case 'admin': return '管理员';
+    switch (role) {
+      case 'admin': return '系统管理员';
       case 'user': return '普通用户';
-      default: return role || '未知角色';
+      default: return role;
     }
   };
 
   const getRoleStyle = (role: string) => {
-    switch (role?.toLowerCase()) {
-      case 'admin': return 'bg-amber-500/10 text-amber-500';
-      case 'user': return 'bg-black/5 dark:bg-white/5 text-text-muted';
-      default: return 'bg-black/5 dark:bg-white/5 text-text';
+    switch (role) {
+      case 'admin': return 'text-primary border-primary/20 bg-primary/5';
+      case 'user': return 'text-text-muted border-border bg-black/5 dark:bg-white/5';
+      default: return 'text-text-muted border-border bg-black/5 dark:bg-white/5';
     }
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col h-full overflow-hidden space-y-4 lg:space-y-6">
       <div className="flex-shrink-0 flex flex-col gap-1">
         <h1 className="text-2xl font-bold tracking-tight text-text">用户管理</h1>
         <p className="text-sm text-text-muted">创建、编辑和管理系统访问权限。</p>
       </div>
 
-      <div className="flex-shrink-0 bg-card border border-border p-6 rounded-2xl backdrop-blur-md relative z-30">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <UserPlus className="w-5 h-5 text-primary" />
+      <div className="flex-shrink-0 bg-card border border-border p-4 lg:p-6 rounded-2xl backdrop-blur-md relative z-30 overflow-hidden">
+        <div 
+          className="flex items-center justify-between cursor-pointer lg:cursor-default"
+          onClick={() => window.innerWidth < 1024 && setIsFormOpen(!isFormOpen)}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 lg:p-2 bg-primary/10 rounded-lg">
+              <UserPlus className="w-4 h-4 lg:w-5 lg:h-5 text-primary" />
+            </div>
+            <h3 className="text-sm lg:text-lg font-bold text-text tracking-tight">创建新用户</h3>
           </div>
-          <h3 className="text-lg font-bold text-text">创建新用户</h3>
-        </div>
-        <form onSubmit={handleCreate} className="grid grid-cols-1 gap-6 sm:grid-cols-4 items-end">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-text-muted uppercase tracking-wider">用户名</label>
-            <input
-              type="text"
-              required
-              className="block w-full rounded-xl border-border bg-black/5 dark:bg-white/5 py-2.5 px-4 text-text placeholder:text-text-muted focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-sm"
-              placeholder="输入登录用户名"
-              value={formData.username}
-              onChange={e => setFormData({ ...formData, username: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-text-muted uppercase tracking-wider">初始密码</label>
-            <input
-              type="password"
-              required
-              className="block w-full rounded-xl border-border bg-black/5 dark:bg-white/5 py-2.5 px-4 text-text placeholder:text-text-muted focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-sm"
-              placeholder="输入初始密码"
-              value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-text-muted uppercase tracking-wider">分配角色</label>
-            <Select
-              value={formData.role}
-              onChange={(val) => setFormData({ ...formData, role: String(val) })}
-              options={[
-                { value: 'user', label: '普通用户' },
-                { value: 'admin', label: '系统管理员' }
-              ]}
-              placeholder="分配角色"
-              className="bg-black/5 dark:bg-white/5"
-            />
-          </div>
-          <button
-            type="submit"
-            className="inline-flex justify-center items-center gap-2 rounded-xl bg-primary py-2.5 px-6 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98]"
-          >
-            <Plus className="h-4 w-4" />
-            立即创建
+          <button className="lg:hidden p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-all">
+            <ChevronRight className={clsx("w-4 h-4 text-text-muted transition-transform duration-300", isFormOpen ? "rotate-90" : "")} />
           </button>
-        </form>
+        </div>
+        
+        <div className={clsx(
+          "transition-all duration-300 ease-in-out lg:block lg:opacity-100 lg:mt-6",
+          isFormOpen ? "mt-6 opacity-100 max-h-[500px]" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden"
+        )}>
+          <form onSubmit={handleCreate} className="grid grid-cols-1 gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-4 items-end">
+            <div className="space-y-1.5 lg:space-y-2">
+              <label className="text-[10px] lg:text-xs font-bold text-text-muted uppercase tracking-wider">用户名</label>
+              <input
+                type="text"
+                required
+                className="block w-full rounded-xl border-border bg-black/5 dark:bg-white/5 py-2 lg:py-2.5 px-3 lg:px-4 text-text placeholder:text-text-muted focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-xs lg:text-sm"
+                placeholder="输入登录用户名"
+                value={formData.username}
+                onChange={e => setFormData({ ...formData, username: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5 lg:space-y-2">
+              <label className="text-[10px] lg:text-xs font-bold text-text-muted uppercase tracking-wider">初始密码</label>
+              <input
+                type="password"
+                required
+                className="block w-full rounded-xl border-border bg-black/5 dark:bg-white/5 py-2 lg:py-2.5 px-3 lg:px-4 text-text placeholder:text-text-muted focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-xs lg:text-sm"
+                placeholder="输入初始密码"
+                value={formData.password}
+                onChange={e => setFormData({ ...formData, password: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5 lg:space-y-2">
+              <label className="text-[10px] lg:text-xs font-bold text-text-muted uppercase tracking-wider">分配角色</label>
+              <Select
+                value={formData.role}
+                onChange={(val) => setFormData({ ...formData, role: String(val) })}
+                options={[
+                  { value: 'user', label: '普通用户' },
+                  { value: 'admin', label: '系统管理员' }
+                ]}
+                placeholder="分配角色"
+                className="bg-black/5 dark:bg-white/5"
+                size="sm"
+              />
+            </div>
+            <button
+              type="submit"
+              className="inline-flex justify-center items-center gap-2 rounded-xl bg-primary py-2 lg:py-2.5 px-6 text-xs lg:text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98]"
+            >
+              <Plus className="h-4 w-4" />
+              立即创建
+            </button>
+          </form>
+        </div>
       </div>
 
-      <div className="flex-1 min-h-0 bg-card border border-border rounded-2xl flex flex-col backdrop-blur-md">
-        <div className="flex-1 overflow-y-auto min-h-0 rounded-t-2xl custom-scrollbar">
-          <table className="w-full text-left border-collapse">
+      {/* Table Area */}
+      <div className="flex-1 min-h-0 bg-card border border-border rounded-2xl flex flex-col backdrop-blur-md overflow-hidden">
+        <div className="flex-1 overflow-auto min-h-0 rounded-t-2xl custom-scrollbar">
+          <table className="w-full text-left border-collapse min-w-[600px]">
             <thead className="bg-black/5 dark:bg-white/5 backdrop-blur-md sticky top-0 z-20">
               <tr>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">用户信息</th>
@@ -214,15 +232,18 @@ export default function Users() {
                 <tr key={u.id} className="group hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-muted group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                        <User className="w-4 h-4" />
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 ring-4 ring-primary/5">
+                        <User size={18} />
                       </div>
-                      <span className="text-sm font-medium text-text">{u.username}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-text">{u.username}</span>
+                        <span className="text-[10px] text-text-muted font-mono uppercase">ID: {u.id}</span>
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={clsx(
-                      "px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase tracking-wider",
+                      "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-current/10",
                       getRoleStyle(u.role)
                     )}>
                       {getRoleLabel(u.role)}
@@ -230,7 +251,7 @@ export default function Users() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={clsx(
-                      "flex items-center gap-1.5 text-[10px] font-bold",
+                      "inline-flex items-center gap-1.5 text-[10px] font-bold",
                       u.is_active ? "text-emerald-500" : "text-text-muted"
                     )}>
                       <div className={clsx("w-1.5 h-1.5 rounded-full", u.is_active ? "bg-emerald-500" : "bg-zinc-600")} />
