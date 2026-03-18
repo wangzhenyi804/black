@@ -197,10 +197,10 @@ export default function Login() {
       <div className="flex w-full lg:w-1/2 items-center justify-center bg-background px-8 py-12">
         <div className="w-full max-w-[400px] space-y-8">
           <div className="text-center space-y-2">
-            <h2 className="text-[28px] font-bold tracking-tight text-white">
+            <h2 className="text-[28px] font-bold tracking-tight text-text">
               欢迎回来！
             </h2>
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-text-muted">
               请输入您的详细信息
             </p>
           </div>
@@ -208,7 +208,7 @@ export default function Login() {
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-5">
               <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-zinc-300">
+                <label htmlFor="email" className="block text-sm font-medium text-text-muted">
                   账号
                 </label>
                 <input
@@ -216,7 +216,7 @@ export default function Login() {
                   name="username"
                   type="text"
                   required
-                  className="block w-full rounded-xl border-white/10 bg-zinc-900/50 py-3 px-4 text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-sm shadow-sm"
+                  className="block w-full rounded-xl border-border bg-black/5 dark:bg-white/5 py-3 px-4 text-text placeholder:text-text-muted/30 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-sm shadow-sm"
                   placeholder="you@example.com"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -224,7 +224,7 @@ export default function Login() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium text-zinc-300">
+                <label htmlFor="password" className="block text-sm font-medium text-text-muted">
                   密码
                 </label>
                 <div className="relative">
@@ -233,14 +233,14 @@ export default function Login() {
                     name="password"
                     type={showPassword ? 'text' : 'password'}
                     required
-                    className="block w-full rounded-xl border-white/10 bg-zinc-900/50 py-3 px-4 text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-sm shadow-sm pr-10"
+                    className="block w-full rounded-xl border-border bg-black/5 dark:bg-white/5 py-3 px-4 text-text placeholder:text-text-muted/30 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-sm shadow-sm pr-10"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-zinc-500 hover:text-zinc-300 transition-colors"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-text-muted hover:text-text transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
@@ -257,9 +257,9 @@ export default function Login() {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-white/10 bg-zinc-900 text-primary focus:ring-primary accent-primary cursor-pointer"
+                  className="h-4 w-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary accent-primary cursor-pointer"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm font-medium text-zinc-400 cursor-pointer select-none">
+                <label htmlFor="remember-me" className="ml-2 block text-sm font-medium text-text-muted cursor-pointer select-none">
                   7天内免登录
                 </label>
               </div>
