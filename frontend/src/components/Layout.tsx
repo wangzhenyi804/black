@@ -10,8 +10,7 @@ import {
   Moon,
   Sun,
   User,
-  Users,
-  X
+  Users
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
