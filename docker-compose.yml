@@ -30,7 +30,7 @@ services:
     ports:
       - "9203:9203"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3616/blackad?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/blackad?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6979
     depends_on:
