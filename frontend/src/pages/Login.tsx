@@ -195,7 +195,17 @@ export default function Login() {
 
       {/* Right Side - Login Form */}
       <div className="flex w-full lg:w-1/2 items-center justify-center bg-background px-8 py-12">
-        <div className="w-full max-w-[400px] space-y-8">
+        <div className="w-full max-w-[400px]">
+          {/* Mobile Logo - Scaled 1.5x and moved up */}
+          <div className="flex lg:hidden flex-col items-center gap-4 mb-16 -mt-20 animate-in fade-in slide-in-from-top-12 duration-1000">
+            <div className="w-24 h-24 flex items-center justify-center bg-black/5 dark:bg-white/5 rounded-[2rem] border border-border shadow-md transition-transform hover:scale-105 duration-500">
+              <img src="/black.svg" className="w-18 h-18 object-contain" alt="Logo" />
+            </div>
+            <span className="text-2xl font-black tracking-tight text-text">
+              Black
+            </span>
+          </div>
+
           <div className="text-center space-y-2">
             <h2 className="text-[28px] font-bold tracking-tight text-text">
               欢迎回来！
