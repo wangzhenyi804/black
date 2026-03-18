@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS user (
     password VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS media (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS media (
     rejection_reason TEXT,
     note TEXT,
     FOREIGN KEY (user_id) REFERENCES user(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS code_slot (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS code_slot (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (media_id) REFERENCES media(id),
     FOREIGN KEY (user_id) REFERENCES user(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS stats (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -66,4 +66,4 @@ CREATE TABLE IF NOT EXISTS stats (
     FOREIGN KEY (user_id) REFERENCES user(id),
     FOREIGN KEY (media_id) REFERENCES media(id),
     FOREIGN KEY (code_slot_id) REFERENCES code_slot(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

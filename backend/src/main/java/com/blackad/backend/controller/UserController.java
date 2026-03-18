@@ -92,6 +92,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}/reset-password")
+    @PreAuthorize("hasRole('ADMIN')")
     public void resetPassword(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         User user = userService.getById(id);
         if (user != null) {

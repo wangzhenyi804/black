@@ -190,7 +190,7 @@ export default function DataOverview() {
   return (
     <div className="flex flex-col h-full overflow-y-auto custom-scrollbar pr-0 lg:pr-2 space-y-4 lg:space-y-6 animate-in fade-in duration-500 max-w-full overflow-x-hidden">
       {/* Header & Date Filter */}
-      <div className="flex-shrink-0 bg-card border border-border p-4 rounded-2xl space-y-4 backdrop-blur-md relative z-30 mx-0">
+      <div className="flex-shrink-0 bg-card border border-border p-4 rounded-2xl space-y-4 backdrop-blur-md relative z-40 mx-0 overflow-visible">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
              <div className="p-2 bg-primary/10 rounded-lg">

@@ -61,12 +61,11 @@
     /* Avoid bounce scroll on mobile if possible */
     overscroll-behavior-y: none;
   }
-  /* Prevent zoom on focus for mobile devices (iOS requires font-size >= 16px) */
+  /* Prevent layout shifts and ensure full height */
   input, select, textarea {
-    @apply text-base lg:text-sm;
-    font-size: 16px !important;
+    @apply text-xs lg:text-sm;
   }
-  @screen lg {
+  @media (min-width: 1024px) {
     input, select, textarea {
       font-size: 0.875rem !important; /* text-sm */
     }

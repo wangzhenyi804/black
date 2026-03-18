@@ -54,7 +54,18 @@ public class MediaController {
             queryWrapper.eq("user_id", user.getId());
         }
 
-        if (StringUtils.hasText(name)) queryWrapper.like("name", name);
+        if (StringUtils.hasText(name)) {
+            String searchName = name.trim();
+            queryWrapper.and(wrapper -> {
+                wrapper.like("name", searchName);
+                try {
+                    Long id = Long.valueOf(searchName);
+                    wrapper.or().eq("id", id);
+                } catch (NumberFormatException e) {
+                    // Not a number, only search by name
+                }
+            });
+        }
         if (StringUtils.hasText(category) && !"全部".equals(category)) queryWrapper.eq("category", category);
         if (StringUtils.hasText(status) && !"全部".equals(status)) queryWrapper.eq("status", status);
 
@@ -62,6 +73,7 @@ public class MediaController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Media createMedia(@AuthenticationPrincipal UserDetails userDetails, @RequestBody Media media) {
         User user = userService.query().eq("username", userDetails.getUsername()).one();
         if (user == null) {
@@ -81,6 +93,7 @@ public class MediaController {
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Media updateMedia(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id, @RequestBody Media media) {
         User user = userService.query().eq("username", userDetails.getUsername()).one();
         Media existing = mediaService.getById(id);
@@ -95,6 +108,12 @@ public class MediaController {
         return media;
     }
 
+    @Autowired
+    private com.blackad.backend.service.CodeSlotService codeSlotService;
+
+    @Autowired
+    private com.blackad.backend.service.StatsService statsService;
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteMedia(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
@@ -102,6 +121,16 @@ public class MediaController {
         if (existing == null) {
             throw new RuntimeException("Media not found");
         }
+
+        // Check if there are code slots associated with this media
+        long codeSlotCount = codeSlotService.query().eq("media_id", id).count();
+        // Check if there is data associated with this media
+        long statsCount = statsService.query().eq("media_id", id).count();
+        
+        if (codeSlotCount > 0 || statsCount > 0) {
+            throw new RuntimeException("该媒体下存在代码位/代码位数据禁止删除");
+        }
+
         mediaService.removeById(id);
     }
 
@@ -119,7 +148,18 @@ public class MediaController {
             queryWrapper.eq("user_id", user.getId());
         }
 
-        if (StringUtils.hasText(name)) queryWrapper.like("name", name);
+        if (StringUtils.hasText(name)) {
+            String searchName = name.trim();
+            queryWrapper.and(wrapper -> {
+                wrapper.like("name", searchName);
+                try {
+                    Long id = Long.valueOf(searchName);
+                    wrapper.or().eq("id", id);
+                } catch (NumberFormatException e) {
+                    // Not a number, only search by name
+                }
+            });
+        }
         if (StringUtils.hasText(category) && !"全部".equals(category)) queryWrapper.eq("category", category);
         if (StringUtils.hasText(status) && !"全部".equals(status)) queryWrapper.eq("status", status);
         

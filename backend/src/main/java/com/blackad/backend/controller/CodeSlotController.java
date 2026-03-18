@@ -51,7 +51,7 @@ public class CodeSlotController {
     private CodeGenerationService codeGenerationService;
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     public IPage<CodeSlot> getCodeSlots(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(defaultValue = "1") int page,
@@ -70,7 +70,18 @@ public class CodeSlotController {
             queryWrapper.eq("user_id", userId);
         }
 
-        if (StringUtils.hasText(name)) queryWrapper.like("name", name);
+        if (StringUtils.hasText(name)) {
+            String searchName = name.trim();
+            queryWrapper.and(wrapper -> {
+                wrapper.like("name", searchName);
+                try {
+                    Long id = Long.valueOf(searchName);
+                    wrapper.or().eq("id", id);
+                } catch (NumberFormatException e) {
+                    // Not a number, only search by name
+                }
+            });
+        }
         if (mediaId != null) queryWrapper.eq("media_id", mediaId);
         if (StringUtils.hasText(type) && !"全部".equals(type)) queryWrapper.eq("type", type);
         if (StringUtils.hasText(status) && !"全部".equals(status)) queryWrapper.eq("status", status);
@@ -139,6 +150,12 @@ public class CodeSlotController {
         if (codeSlot.getRevenueRatio() != null) {
             existing.setRevenueRatio(codeSlot.getRevenueRatio());
         }
+        if (codeSlot.getUserId() != null) {
+            existing.setUserId(codeSlot.getUserId());
+        }
+        if (codeSlot.getMediaId() != null) {
+            existing.setMediaId(codeSlot.getMediaId());
+        }
         
         // Regenerate code if critical fields change (though usually dimensions/type shouldn't change)
         // Here we assume only settings change, maybe regenerate code if shielding changes
@@ -153,6 +170,7 @@ public class CodeSlotController {
     }
 
     @PutMapping("/{id}/ratio")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateCodeSlotRatio(@AuthenticationPrincipal UserDetails userDetails,
                                                   @PathVariable Long id,
                                                   @RequestBody Map<String, java.math.BigDecimal> body) {
@@ -170,6 +188,9 @@ public class CodeSlotController {
         return ResponseEntity.ok().build();
     }
     
+    @Autowired
+    private com.blackad.backend.service.StatsService statsService;
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteCodeSlot(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
@@ -179,11 +200,19 @@ public class CodeSlotController {
             if (!"admin".equals(user.getRole()) && !existing.getUserId().equals(user.getId())) {
                 throw new AccessDeniedException("Access denied");
             }
+            
+            // Check if there is data associated with this code slot
+            long statsCount = statsService.query().eq("code_slot_id", id).count();
+            if (statsCount > 0) {
+                throw new RuntimeException("该代码位下存在代码位数据禁止删除");
+            }
+            
             codeSlotService.removeById(id);
         }
     }
 
     @GetMapping("/export")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<byte[]> exportCodeSlots(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String name,
@@ -200,7 +229,18 @@ public class CodeSlotController {
             query.eq("user_id", userId);
         }
 
-        if (StringUtils.hasText(name)) query.like("name", name);
+        if (StringUtils.hasText(name)) {
+            String searchName = name.trim();
+            query.and(wrapper -> {
+                wrapper.like("name", searchName);
+                try {
+                    Long id = Long.valueOf(searchName);
+                    wrapper.or().eq("id", id);
+                } catch (NumberFormatException e) {
+                    // Not a number, only search by name
+                }
+            });
+        }
         if (mediaId != null) query.eq("media_id", mediaId);
         if (StringUtils.hasText(type) && !"全部".equals(type)) query.eq("type", type);
         if (StringUtils.hasText(status) && !"全部".equals(status)) query.eq("status", status);

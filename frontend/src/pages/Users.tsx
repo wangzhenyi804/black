@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Edit2, Key, Plus, RefreshCw, Trash2, User, UserPlus, X, ChevronRight } from 'lucide-react';
+import { Edit2, Key, Plus, RefreshCw, Trash2, User, UserPlus, X, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '../api/client';
 import Pagination from '../components/Pagination';
@@ -29,6 +29,7 @@ export default function Users() {
   const [formData, setFormData] = useState({ username: '', password: '', role: 'user' });
   const [resetPwd, setResetPwd] = useState({ userId: 0, newPassword: '' });
   const [editingUser, setEditingUser] = useState<EditUserForm | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
@@ -100,15 +101,17 @@ export default function Users() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('确定要删除该用户吗？')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirmId) return;
     try {
-      await api.delete(`/users/${id}`);
+      await api.delete(`/users/${deleteConfirmId}`);
       toast.success('用户已成功删除');
       fetchUsers();
     } catch (err) {
       console.error('Delete user error:', err);
       toast.error('删除用户失败');
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -147,7 +150,7 @@ export default function Users() {
         <p className="text-sm text-text-muted">创建、编辑和管理系统访问权限。</p>
       </div>
 
-      <div className="flex-shrink-0 bg-card border border-border p-4 lg:p-6 rounded-2xl backdrop-blur-md relative z-30 overflow-hidden">
+      <div className="flex-shrink-0 bg-card border border-border p-4 lg:p-6 rounded-2xl backdrop-blur-md relative z-40 overflow-visible">
         <div 
           className="flex items-center justify-between cursor-pointer lg:cursor-default"
           onClick={() => window.innerWidth < 1024 && setIsFormOpen(!isFormOpen)}
@@ -165,7 +168,7 @@ export default function Users() {
         
         <div className={clsx(
           "transition-all duration-300 ease-in-out lg:block lg:opacity-100 lg:mt-6",
-          isFormOpen ? "mt-6 opacity-100 max-h-[500px]" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden"
+          isFormOpen ? "mt-6 opacity-100 max-h-[500px] overflow-visible" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden lg:overflow-visible"
         )}>
           <form onSubmit={handleCreate} className="grid grid-cols-1 gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-4 items-end">
             <div className="space-y-1.5 lg:space-y-2">
@@ -270,7 +273,7 @@ export default function Users() {
                             <Edit2 size={16} />
                           </button>
                           <button
-                            onClick={() => handleDelete(u.id)}
+                            onClick={() => setDeleteConfirmId(u.id)}
                             className="p-2 text-text-muted hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
                             title="删除用户"
                           >
@@ -307,7 +310,7 @@ export default function Users() {
           )}
         </div>
 
-        <div className="flex-shrink-0 bg-black/5 dark:bg-white/5 p-4 border-t border-border rounded-b-2xl">
+        <div className="flex-shrink-0 bg-black/5 dark:bg-white/5 p-4 border-t border-border rounded-b-2xl overflow-visible relative z-10">
           <Pagination
             current={pagination.current}
             size={pagination.size}
@@ -439,6 +442,39 @@ export default function Users() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110] animate-in fade-in duration-200">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="p-3 bg-rose-500/10 rounded-full">
+                <AlertTriangle className="w-8 h-8 text-rose-500" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-text">确认删除?</h3>
+                <p className="text-sm text-text-muted">
+                  您确定要删除该用户吗？此操作无法撤销。
+                </p>
+              </div>
+              <div className="flex gap-3 w-full mt-2">
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="flex-1 py-2.5 text-sm font-bold text-text-muted bg-black/5 dark:bg-white/5 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 transition-all"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 py-2.5 text-sm font-bold text-white bg-rose-500 rounded-xl hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all"
+                >
+                  确认删除
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -145,8 +145,10 @@ export default function Layout() {
             {isAdMenuOpen && !effectiveCollapsed && (
               <div className="mx-4 mt-1 space-y-1 border-l-2 border-border pl-6 animate-in slide-in-from-top-2 duration-500">
                 {[
-                  { to: '/media', label: '媒体管理' },
-                  { to: '/codeslots', label: '代码位管理' },
+                  ...(isAdmin ? [
+                    { to: '/media', label: '媒体管理' },
+                    { to: '/codeslots', label: '代码位管理' },
+                  ] : []),
                   { to: '/data-overview', label: '数据概览' },
                   { to: '/codeslot-data', label: '代码位数据' }
                 ].map(item => (

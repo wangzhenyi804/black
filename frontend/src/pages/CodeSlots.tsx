@@ -1,4 +1,4 @@
-import { ChevronRight, Code, Cpu, Download, FileUp, Globe, Layout, MousePointer2, Plus, Search, Settings2, Trash2, X } from 'lucide-react';
+import { ChevronRight, Code, Cpu, Download, FileUp, Globe, Layout, MousePointer2, Plus, Search, Settings2, Trash2, X, AlertTriangle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useEffect, useState } from 'react';
 import api from '../api/client';
@@ -77,6 +77,7 @@ export default function CodeSlots() {
   const [currentCode, setCurrentCode] = useState('');
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null); // New state for editing
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
@@ -243,14 +244,17 @@ export default function CodeSlots() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('确定要删除这个代码位吗？此操作不可恢复。')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirmId) return;
     try {
-      await api.delete(`/codeslots/${id}`);
+      await api.delete(`/codeslots/${deleteConfirmId}`);
       toast.success('删除成功');
       fetchSlots();
-    } catch (err) {
-      toast.error('删除失败');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.response?.data || '删除失败';
+      toast.error(msg);
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -300,7 +304,7 @@ export default function CodeSlots() {
       </div>
 
       {/* Filters */}
-      <div className="flex-shrink-0 bg-card p-4 rounded-2xl lg:rounded-3xl border border-border backdrop-blur-md relative z-30 overflow-hidden">
+      <div className="flex-shrink-0 bg-card p-4 rounded-2xl lg:rounded-3xl border border-border backdrop-blur-md relative z-40 overflow-visible">
         <div className="lg:hidden">
           <button 
             onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -316,7 +320,7 @@ export default function CodeSlots() {
 
         <div className={clsx(
           "transition-all duration-300 ease-in-out lg:block lg:opacity-100",
-          isFilterOpen ? "opacity-100 max-h-[500px] mt-4" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden"
+          isFilterOpen ? "opacity-100 max-h-[500px] mt-4 overflow-visible" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden lg:overflow-visible"
         )}>
           <form onSubmit={handleSearch} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 items-end">
             <div className="relative group">
@@ -461,7 +465,7 @@ export default function CodeSlots() {
                             <button 
                               className="p-2 rounded-lg text-rose-500/50 hover:bg-rose-500/10 hover:text-rose-500 transition-all" 
                               title="删除"
-                              onClick={() => handleDelete(slot.id)}
+                              onClick={() => setDeleteConfirmId(slot.id)}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -475,7 +479,7 @@ export default function CodeSlots() {
             </tbody>
           </table>
         </div>
-        <div className="flex-shrink-0 border-t border-border p-4 bg-black/5 dark:bg-white/5 rounded-b-2xl lg:rounded-b-3xl">
+        <div className="flex-shrink-0 border-t border-border p-4 bg-black/5 dark:bg-white/5 rounded-b-2xl lg:rounded-b-3xl overflow-visible relative z-10">
           <Pagination
             current={pagination.current}
             size={pagination.size}
@@ -817,6 +821,39 @@ export default function CodeSlots() {
             >
               复制到剪贴板
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110] animate-in fade-in duration-200">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="p-3 bg-rose-500/10 rounded-full">
+                <AlertTriangle className="w-8 h-8 text-rose-500" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-text">确认删除?</h3>
+                <p className="text-sm text-text-muted">
+                  您确定要删除这个代码位吗？此操作无法撤销。
+                </p>
+              </div>
+              <div className="flex gap-3 w-full mt-2">
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="flex-1 py-2.5 text-sm font-bold text-text-muted bg-black/5 dark:bg-white/5 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 transition-all"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 py-2.5 text-sm font-bold text-white bg-rose-500 rounded-xl hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all"
+                >
+                  确认删除
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

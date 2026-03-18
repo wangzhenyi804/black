@@ -19,6 +19,7 @@
 /Users/wangzhenyi/MyData/pycode/black-ad/backend/src/main/java/com/blackad/backend/entity/Media.java
 /Users/wangzhenyi/MyData/pycode/black-ad/backend/src/main/java/com/blackad/backend/entity/Stats.java
 /Users/wangzhenyi/MyData/pycode/black-ad/backend/src/main/java/com/blackad/backend/entity/User.java
+/Users/wangzhenyi/MyData/pycode/black-ad/backend/src/main/java/com/blackad/backend/exception/GlobalExceptionHandler.java
 /Users/wangzhenyi/MyData/pycode/black-ad/backend/src/main/java/com/blackad/backend/mapper/CodeSlotMapper.java
 /Users/wangzhenyi/MyData/pycode/black-ad/backend/src/main/java/com/blackad/backend/mapper/MediaMapper.java
 /Users/wangzhenyi/MyData/pycode/black-ad/backend/src/main/java/com/blackad/backend/mapper/StatsMapper.java

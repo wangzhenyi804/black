@@ -180,6 +180,7 @@ export default function Media() {
         domain: '',
         category: '',
         type: 'Website',
+        status: '',
         icp_code: '',
         note: '',
         description: '',
@@ -202,6 +203,7 @@ export default function Media() {
       domain: media.domain,
       category: media.category,
       type: media.type,
+      status: media.status,
       icp_code: media.icp_code,
       note: media.note,
       description: media.description,
@@ -219,9 +221,9 @@ export default function Media() {
       await api.delete(`/media/${deleteConfirmId}`);
       toast.success('媒体已删除');
       fetchMedia();
-    } catch (err) {
-      console.error('Delete error:', err);
-      toast.error('删除失败');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.response?.data || '删除失败';
+      toast.error(msg);
     } finally {
       setDeleteConfirmId(null);
     }
@@ -242,7 +244,7 @@ export default function Media() {
   return (
     <div className="flex flex-col h-full space-y-4 animate-in fade-in duration-500">
       {/* Header & Filter */}
-      <div className="flex-shrink-0 bg-card p-4 lg:p-6 rounded-2xl lg:rounded-3xl border border-border space-y-4 backdrop-blur-md relative z-30 overflow-hidden">
+      <div className="flex-shrink-0 bg-card p-4 lg:p-6 rounded-2xl lg:rounded-3xl border border-border space-y-4 backdrop-blur-md relative z-40 overflow-visible">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-1.5 lg:p-2 bg-primary/10 rounded-xl">
@@ -285,7 +287,7 @@ export default function Media() {
 
         <div className={clsx(
           "transition-all duration-300 ease-in-out lg:block lg:opacity-100",
-          isFilterOpen ? "opacity-100 max-h-[500px]" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden"
+          isFilterOpen ? "opacity-100 max-h-[500px] overflow-visible" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden lg:overflow-visible"
         )}>
           <div className="space-y-4 pt-4 lg:pt-0">
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 lg:gap-4">
@@ -404,7 +406,7 @@ export default function Media() {
           </table>
         </div>
         
-        <div className="flex-shrink-0 border-t border-border p-4 bg-black/5 dark:bg-white/5 rounded-b-2xl lg:rounded-b-3xl">
+        <div className="flex-shrink-0 border-t border-border p-4 bg-black/5 dark:bg-white/5 rounded-b-2xl lg:rounded-b-3xl overflow-visible relative z-10">
           <Pagination
             current={page}
             size={size}
@@ -464,6 +466,21 @@ export default function Media() {
                     />
                   </div>
                 </div>
+
+                {editingId && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-2">
+                      <span className="text-rose-500">*</span> 媒体状态
+                    </label>
+                    <Select
+                      value={formData.status || ''}
+                      onChange={(val) => setFormData({ ...formData, status: String(val) })}
+                      options={STATUS_TABS.filter(s => s !== '全部').map(s => ({ value: s, label: s }))}
+                      placeholder="请选择状态"
+                      className="bg-black/5 dark:bg-white/5"
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">

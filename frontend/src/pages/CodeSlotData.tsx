@@ -191,7 +191,7 @@ export default function CodeSlotData() {
   return (
     <div className="flex flex-col h-full overflow-hidden space-y-4 lg:space-y-6">
       {/* Filters */}
-      <div className="flex-shrink-0 bg-card border border-border p-4 rounded-2xl space-y-4 backdrop-blur-md relative z-30 overflow-hidden">
+      <div className="flex-shrink-0 bg-card border border-border p-4 rounded-2xl space-y-4 backdrop-blur-md relative z-40 overflow-visible">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
              <div className="p-1.5 lg:p-2 bg-primary/10 rounded-lg">
@@ -231,7 +231,7 @@ export default function CodeSlotData() {
 
         <div className={clsx(
           "transition-all duration-300 ease-in-out lg:block lg:opacity-100",
-          isFilterOpen ? "opacity-100 max-h-[600px] mt-4" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden"
+          isFilterOpen ? "opacity-100 max-h-[600px] mt-4 overflow-visible" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden lg:overflow-visible"
         )}>
           <div className="space-y-4 pt-4 lg:pt-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
@@ -385,7 +385,7 @@ export default function CodeSlotData() {
           )}
         </div>
 
-        <div className="flex-shrink-0 bg-black/5 dark:bg-white/5 p-4 border-t border-border rounded-b-2xl">
+        <div className="flex-shrink-0 bg-black/5 dark:bg-white/5 p-4 border-t border-border rounded-b-2xl overflow-visible relative z-10">
           <Pagination
             current={pagination.current}
             size={pagination.size}

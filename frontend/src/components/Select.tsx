@@ -14,6 +14,7 @@ interface SelectProps {
   className?: string;
   required?: boolean;
   size?: 'sm' | 'md';
+  position?: 'top' | 'bottom';
 }
 
 export default function Select({ 
@@ -23,7 +24,8 @@ export default function Select({
   placeholder = '请选择', 
   className = '', 
   required = false,
-  size = 'md' 
+  size = 'md',
+  position = 'bottom'
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -47,16 +49,15 @@ export default function Select({
   };
 
   const sizeClasses = size === 'sm' 
-    ? 'px-3 py-2 text-base lg:text-xs' 
-    : 'px-4 py-3 text-base lg:text-sm';
+    ? 'px-3 py-2 text-xs lg:text-xs' 
+    : 'px-4 py-3 text-sm lg:text-sm';
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        style={{ fontSize: '16px' }} // Inline style to override and ensure 16px on mobile
-        className={`w-full flex items-center justify-between bg-black/5 dark:bg-white/5 border border-border rounded-xl ${sizeClasses} lg:!text-inherit transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
+        className={`w-full flex items-center justify-between bg-black/5 dark:bg-white/5 border border-border rounded-xl ${sizeClasses} transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${
           isOpen ? 'ring-2 ring-primary/20 border-primary' : ''
         }`}
       >
@@ -70,7 +71,11 @@ export default function Select({
       </button>
 
       {isOpen && (
-        <div className="absolute z-[100] w-full mt-2 bg-card border border-border rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-100 origin-top">
+        <div className={`absolute z-[100] w-full bg-card border border-border rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-100 ${
+          position === 'top' 
+            ? 'bottom-full mb-2 origin-bottom' 
+            : 'top-full mt-2 origin-top'
+        }`}>
           <div className="p-1 space-y-0.5">
             {options.map((option) => (
               <button
