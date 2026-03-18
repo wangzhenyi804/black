@@ -6,7 +6,7 @@ services:
       MYSQL_ROOT_PASSWORD: Zxc12300
       MYSQL_DATABASE: blackad
     ports:
-      - "3616:3616"
+      - "3616:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -20,7 +20,7 @@ services:
     image: docker.m.daocloud.io/library/redis:latest
     container_name: blackad-redis
     ports:
-      - "6979:6979"
+      - "6979:6379"
     networks:
       - blackad-net
 
@@ -30,8 +30,9 @@ services:
     ports:
       - "9203:9203"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3616/blackad?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/blackad?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
       mysql:
         condition: service_healthy
