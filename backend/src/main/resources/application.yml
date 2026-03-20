@@ -13,7 +13,6 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
-      data-locations: classpath:data.sql
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -34,3 +33,10 @@ spring:
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
   expiration: 86400000 # 1 day
+
+aliyun:
+  ocr:
+    access-key-id: ${ALIYUN_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIYUN_ACCESS_KEY_SECRET:}
+    app-code: ${ALIYUN_APP_CODE:}
+    endpoint: ${ALIYUN_OCR_ENDPOINT:}

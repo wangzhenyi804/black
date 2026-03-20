@@ -187,6 +187,9 @@ public class CodeSlotController {
     @Autowired
     private com.blackad.backend.service.StatsService statsService;
 
+    @Autowired
+    private com.blackad.backend.service.MediaService mediaService;
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteCodeSlot(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
@@ -255,13 +258,31 @@ public class CodeSlotController {
         if (StringUtils.hasText(type) && !"全部".equals(type)) query.eq("type", type);
         if (StringUtils.hasText(status) && !"全部".equals(status)) query.eq("status", status);
 
+        query.orderByDesc("created_at");
+        query.last("LIMIT 300"); // Limit to 300 records as requested
+
         List<CodeSlot> list = codeSlotService.list(query);
-        String csv = CsvUtils.toCsv(list, CodeSlot.class);
-        byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
+        
+        StringBuilder csv = new StringBuilder("\uFEFF"); // BOM for Excel UTF-8 compatibility
+        csv.append("代码位名称,代码位ID,所属媒体,终端,形式,分成系数,状态\n");
+        
+        for (CodeSlot slot : list) {
+            com.blackad.backend.entity.Media media = mediaService.getById(slot.getMediaId());
+            csv.append(CsvUtils.escape(slot.getName())).append(",")
+               .append(CsvUtils.escape(slot.getCodeSlotId())).append(",")
+               .append(media != null ? CsvUtils.escape(media.getName()) : "未知").append(",")
+               .append(CsvUtils.escape(slot.getTerminal())).append(",")
+               .append(CsvUtils.escape(slot.getType())).append(",")
+               .append(slot.getRevenueRatio() != null ? slot.getRevenueRatio() : "0.70").append(",")
+               .append("ACTIVE".equals(slot.getStatus()) ? "正常" : "PAUSED".equals(slot.getStatus()) ? "暂停" : slot.getStatus())
+               .append("\n");
+        }
+
+        byte[] bytes = csv.toString().getBytes(StandardCharsets.UTF_8);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=codeslot_export.csv")
-                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
                 .body(bytes);
     }
 

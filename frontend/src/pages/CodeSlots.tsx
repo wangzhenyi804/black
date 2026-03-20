@@ -1,10 +1,10 @@
-import { ChevronRight, Code, Cpu, Download, FileUp, Globe, Layout, MousePointer2, Plus, Search, Settings2, Trash2, X } from 'lucide-react';
 import { clsx } from 'clsx';
+import { ChevronRight, Code, Cpu, Download, FileUp, Globe, Layout, MousePointer2, Plus, Search, Settings2, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '../api/client';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import Pagination from '../components/Pagination';
 import Select from '../components/Select';
-import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -47,6 +47,23 @@ interface FilterState {
   status: string;
 }
 
+const initialFormData: Partial<CodeSlot> = {
+  name: '',
+  media_id: undefined,
+  type: '',
+  terminal: 'H5',
+  display_type: '固定块',
+  ad_type: '信息流',
+  ad_form: '原生缩略图',
+  ratio: 6,
+  style_type: '默认',
+  note: '',
+  image_url: '',
+  is_shielding: false,
+  status: 'ACTIVE',
+  user_id: undefined
+};
+
 export default function CodeSlots() {
   const { isAdmin } = useAuth();
   const toast = useToast();
@@ -59,22 +76,7 @@ export default function CodeSlots() {
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<CodeSlot>>({
-    name: '',
-    media_id: undefined,
-    user_id: undefined, // New field for owner assignment
-    terminal: 'H5',
-    display_type: '固定块',
-    ad_type: '信息流',
-    ad_form: '原生缩略图',
-    ratio: 6,
-    style_type: '默认',
-    note: '',
-    is_shielding: false,
-    status: 'ACTIVE',
-    image_url: '',
-    revenue_ratio: 0.7
-  });
+  const [formData, setFormData] = useState<Partial<CodeSlot>>(initialFormData);
   const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
   const [currentCode, setCurrentCode] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -83,6 +85,7 @@ export default function CodeSlots() {
   const [deleteStep, setDeleteStep] = useState<1 | 2>(1); // New state for double confirmation
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isBatchMode, setIsBatchMode] = useState(false);
 
   useEffect(() => {
     fetchMedia();
@@ -90,7 +93,7 @@ export default function CodeSlots() {
     if (isAdmin) {
       fetchUsers();
     }
-  }, [pagination.current, pagination.size]);
+  }, [pagination.current, pagination.size, isAdmin]);
 
   const fetchUsers = () => {
     api.get('/users/all').then(res => {
@@ -191,6 +194,12 @@ export default function CodeSlots() {
     }
   };
 
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingId(null);
+    setFormData(initialFormData);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -205,23 +214,8 @@ export default function CodeSlots() {
       }
       
       setIsModalOpen(false);
-      setEditingId(null); // Reset editing ID
-      setFormData({
-        name: '',
-        media_id: undefined,
-        user_id: undefined,
-        terminal: 'H5',
-        display_type: '固定块',
-        ad_type: '信息流',
-        ad_form: '原生缩略图',
-        ratio: 6,
-        style_type: '默认',
-        note: '',
-        is_shielding: false,
-        status: 'ACTIVE',
-        image_url: '',
-        revenue_ratio: 0.7
-      });
+      setEditingId(null);
+      setFormData(initialFormData);
       fetchSlots();
     } catch (err) {
       toast.error(editingId ? '更新失败' : '新增代码位失败');
@@ -229,6 +223,7 @@ export default function CodeSlots() {
   };
 
   const handleEdit = (slot: CodeSlot) => {
+    console.log('[CodeSlots] Editing slot:', slot);
     setEditingId(slot.id);
     setFormData({
       name: slot.name,
@@ -263,6 +258,7 @@ export default function CodeSlots() {
         await api.delete('/codeslots/batch', { data: selectedIds });
         toast.success(`成功删除 ${selectedIds.length} 个代码位`);
         setSelectedIds([]);
+        setIsBatchMode(false);
       } else {
         await api.delete(`/codeslots/${deleteConfirmId}`);
         toast.success('删除成功');
@@ -296,11 +292,26 @@ export default function CodeSlots() {
     setIsCodeModalOpen(true);
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'ACTIVE': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'PAUSED': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      default: return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+      case 'ACTIVE': 
+        return { 
+          label: '正常', 
+          dot: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]',
+          text: 'text-emerald-500'
+        };
+      case 'PAUSED': 
+        return { 
+          label: '暂停', 
+          dot: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]',
+          text: 'text-amber-500'
+        };
+      default: 
+        return { 
+          label: status, 
+          dot: 'bg-zinc-500 shadow-[0_0_8px_rgba(113,113,122,0.4)]',
+          text: 'text-zinc-500'
+        };
     }
   };
 
@@ -317,15 +328,21 @@ export default function CodeSlots() {
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          {selectedIds.length > 0 && isAdmin && (
+          {isAdmin && (
             <button
-              onClick={() => {
-                setDeleteConfirmId(-1);
-                setDeleteStep(1);
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsBatchMode(!isBatchMode);
+                if (isBatchMode) setSelectedIds([]);
               }}
-              className="flex-1 sm:flex-none bg-rose-500/10 text-rose-500 px-3 lg:px-4 py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-rose-500/20 transition-all flex items-center justify-center gap-1.5 lg:gap-2"
+              className={clsx(
+                "px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl text-[10px] lg:text-sm font-bold transition-all flex items-center gap-1.5 lg:gap-2",
+                isBatchMode 
+                  ? "bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90" 
+                  : "bg-black/5 dark:bg-white/5 text-text-muted hover:text-text"
+              )}
             >
-              <Trash2 size={14} className="lg:size-4" /> 批量删除 ({selectedIds.length})
+              批量操作
             </button>
           )}
           <button
@@ -338,8 +355,12 @@ export default function CodeSlots() {
             <FileUp size={14} className="lg:size-4" /> 导入
             <input type="file" className="hidden" accept=".csv" onChange={handleImport} />
           </label>
-          <button 
-            onClick={() => setIsModalOpen(true)}
+          <button
+            onClick={() => {
+              setFormData(initialFormData);
+              setEditingId(null);
+              setIsModalOpen(true);
+            }}
             className="flex-1 sm:flex-none bg-primary text-white px-3 lg:px-4 py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-1.5 lg:gap-2"
           >
             <Plus size={16} className="lg:size-[18px]" /> 新增
@@ -436,7 +457,7 @@ export default function CodeSlots() {
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-black/5 dark:bg-white/5 backdrop-blur-md z-10 border-b border-border">
               <tr>
-                {isAdmin && (
+                {isBatchMode && (
                   <th className="px-6 py-4 w-12">
                     <input
                       type="checkbox"
@@ -457,15 +478,15 @@ export default function CodeSlots() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr><td colSpan={isAdmin ? 8 : 5} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
+                <tr><td colSpan={5 + (isAdmin ? 2 : 0) + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
               ) : slots.length === 0 ? (
-                <tr><td colSpan={isAdmin ? 8 : 5} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
+                <tr><td colSpan={5 + (isAdmin ? 2 : 0) + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
               ) : slots.map((slot) => {
                 const media = mediaList.find(m => m.id === slot.media_id);
                 const user = userList.find(u => u.id === slot.user_id);
                 return (
                   <tr key={slot.id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group">
-                    {isAdmin && (
+                    {isBatchMode && (
                       <td className="px-6 py-4">
                         <input
                           type="checkbox"
@@ -504,9 +525,19 @@ export default function CodeSlots() {
                       </td>
                     )}
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border ${getStatusBadge(slot.status)}`}>
-                        {slot.status === 'ACTIVE' ? '正常' : slot.status === 'PAUSED' ? '暂停' : slot.status}
-                      </span>
+                      {(() => {
+                        const config = getStatusConfig(slot.status);
+                        return (
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${config.dot}`} />
+                            {config.label !== '正常' && (
+                              <span className={`text-sm font-bold ${config.text}`}>
+                                {config.label}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
@@ -566,9 +597,9 @@ export default function CodeSlots() {
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <Plus className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="text-lg font-bold text-text">新增代码位</h3>
+                <h3 className="text-lg font-bold text-text">{editingId ? '编辑代码位' : '新增代码位'}</h3>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 text-text-muted hover:text-text transition-colors">
+              <button onClick={handleCloseModal} className="p-2 text-text-muted hover:text-text transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -612,13 +643,13 @@ export default function CodeSlots() {
                       <Settings2 className="w-3 h-3" /> 归属用户 (管理员功能)
                     </label>
                     <Select
-                      value={formData.user_id || ''}
-                      onChange={(val) => setFormData({ ...formData, user_id: Number(val) })}
+                      value={formData.user_id ?? ''}
+                      onChange={(val) => setFormData({ ...formData, user_id: val === '' ? undefined : Number(val) })}
                       options={[
                         { value: '', label: '默认 (当前管理员)' },
-                        ...userList.filter(u => u.is_active === 1).map(u => ({ value: u.id, label: u.username }))
+                        ...userList.map(u => ({ value: u.id, label: u.username }))
                       ]}
-                      placeholder="选择归属用户"
+                      placeholder="选择归属人"
                       className="bg-black/5 dark:bg-white/5"
                     />
                   </div>
@@ -849,7 +880,7 @@ export default function CodeSlots() {
               <div className="flex gap-4 pt-6 sticky bottom-0 bg-card pb-2 border-t border-border">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={handleCloseModal}
                   className="flex-1 py-3 text-sm font-bold text-text-muted bg-black/5 dark:bg-white/5 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95"
                 >
                   取消
@@ -892,7 +923,40 @@ export default function CodeSlots() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Batch Actions Bar */}
+      {isBatchMode && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-card border border-border rounded-full shadow-2xl px-6 py-3 flex items-center gap-4 z-50 animate-in slide-in-from-bottom-8">
+          <div className="text-sm font-bold text-text flex items-center gap-2">
+            已选择 <span className="text-primary">{selectedIds.length}</span> 项
+          </div>
+          <div className="w-px h-4 bg-border" />
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (selectedIds.length === 0) {
+                  toast.error('请先选择要删除的代码位');
+                  return;
+                }
+                setDeleteConfirmId(-1);
+                setDeleteStep(1);
+              }}
+              disabled={selectedIds.length === 0}
+              className="px-4 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 size={14} /> 批量删除
+            </button>
+            <button
+              onClick={() => {
+                setIsBatchMode(false);
+                setSelectedIds([]);
+              }}
+              className="px-4 py-2 bg-black/5 dark:bg-white/5 text-text-muted rounded-xl text-xs font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
       <DeleteConfirmModal
         isOpen={!!deleteConfirmId}
         onClose={() => {

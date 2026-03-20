@@ -1,0 +1,65 @@
+<h2>多端适配：移动端/桌面端统一同步工作台</h2>
+<p class="subtitle">针对手机相册上传与桌面端剪贴板粘贴进行双重优化</p>
+
+<div class="mockup">
+  <div class="mockup-header">移动端操作流程 (手机相册)</div>
+  <div class="mockup-body">
+    <div class="split">
+      <div class="section">
+        <p class="label">1. 多图选择</p>
+        <div class="placeholder" style="height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fdf2f2; border: 2px dashed #ff3b30;">
+          <p style="font-size: 1.5rem;">🖼️ + 🖼️ + 🖼️</p>
+          <p style="font-size: 0.75rem; color: #ff3b30; margin-top: 0.5rem;">支持手机相册一次选择多图</p>
+        </div>
+      </div>
+      <div class="section">
+        <p class="label">2. 识别队列</p>
+        <div style="padding: 0.5rem; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <div style="width: 20px; height: 20px; background: #34c759; border-radius: 50%; font-size: 10px; color: white; display: flex; align-items: center; justify-content: center;">✓</div>
+            <span style="font-size: 0.75rem;">图片 1 识别成功</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div style="width: 20px; height: 20px; border: 2px solid #0071e3; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <span style="font-size: 0.75rem;">图片 2 正在解析...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="label">跨平台交互方案</h3>
+  <div class="options" data-multiselect>
+    <div class="option selected" data-choice="mobile-album" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>移动端：批量相册上传</h3>
+        <p>适配移动端 UI。大按钮触发相册选择，支持多选图片后批量识别，数据以列表形式平铺展示。</p>
+      </div>
+    </div>
+    <div class="option selected" data-choice="desktop-clipboard" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>桌面端：剪贴板/拖拽</h3>
+        <p>保持原有的 Ctrl+V 粘贴和拖拽功能，适合电脑登录微信的场景。</p>
+      </div>
+    </div>
+    <div class="option selected" data-choice="unified-preview" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>统一预览编辑</h3>
+        <p>无论哪种来源，识别结果均进入“暂存工作区”。用户可逐条检查、修改或一键合并导入。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<div class="indicator-bar">
+  <span>完美！这样管理员无论是在电脑前还是出差途中，都能随时完成数据同步。准备进入 Spec 编写阶段了吗？</span>
+</div>

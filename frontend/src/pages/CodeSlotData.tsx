@@ -7,10 +7,12 @@ import Pagination from '../components/Pagination';
 import Select from '../components/Select';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import ImportStatsModal from '../components/ImportStatsModal';
 
 interface CodeSlotStats {
   codeSlotId: number;
   codeSlotName: string;
+  mediaName?: string;
   impressions: number;
   clicks: number;
   revenue: number; // 分成前收入
@@ -40,6 +42,7 @@ export default function CodeSlotData() {
     end: format(subDays(new Date(), 1), 'yyyy-MM-dd')
   });
   const [filters, setFilters] = useState({
+    mediaName: '',
     codeSlotId: '',
     codeSlotName: '',
     terminal: '全部',
@@ -51,6 +54,7 @@ export default function CodeSlotData() {
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ current: 1, size: 10, total: 0 });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -94,36 +98,6 @@ export default function CodeSlotData() {
     fetchData();
     if (window.innerWidth < 1024) {
       setIsFilterOpen(false);
-    }
-  };
-
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      setLoading(true);
-      const res = await api.post('/stats/import', formData);
-      const data = res.data;
-      if (data.success) {
-        toast.success(data.message);
-        if (data.warning) {
-          toast.info(data.warning);
-        }
-      } else {
-        toast.error(data.message || '导入失败');
-      }
-      fetchData();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data || '导入失败');
-    } finally {
-      setLoading(false);
-      // Reset input value to allow uploading the same file again
-      e.target.value = '';
     }
   };
 
@@ -210,13 +184,21 @@ export default function CodeSlotData() {
               <Download size={14} className="lg:size-3.5" /> 导出
             </button>
             {isAdmin && (
-              <label className="flex-1 sm:flex-none inline-flex justify-center items-center gap-1.5 lg:gap-2 rounded-xl bg-black/5 dark:bg-white/5 py-2 px-3 lg:px-4 text-[10px] lg:text-xs font-semibold text-text border border-border hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-[0.98] cursor-pointer">
-                <FileUp size={14} className="lg:size-3.5" /> 导入
-                <input type="file" className="hidden" accept=".csv" onChange={handleImport} />
-              </label>
+              <button 
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex-1 sm:flex-none inline-flex justify-center items-center gap-1.5 lg:gap-2 rounded-xl bg-black/5 dark:bg-white/5 py-2 px-3 lg:px-4 text-[10px] lg:text-xs font-semibold text-text border border-border hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-[0.98]"
+              >
+                <FileUp size={14} className="lg:size-3.5" /> 智能导入
+              </button>
             )}
           </div>
         </div>
+
+        <ImportStatsModal 
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={fetchData}
+        />
 
         <div className="lg:hidden">
           <button 
@@ -270,7 +252,19 @@ export default function CodeSlotData() {
               </div>
             </div>
 
-            <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4 items-end">
+            <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 lg:gap-4 items-end">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
+                  <Layout className="w-3 h-3" /> 所属媒体
+                </label>
+                <input
+                  type="text"
+                  className="block w-full rounded-xl border-border bg-black/5 dark:bg-white/5 py-2 px-3 text-text placeholder:text-text-muted focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-[10px] lg:text-xs"
+                  placeholder="输入媒体关键词"
+                  value={filters.mediaName}
+                  onChange={e => setFilters({ ...filters, mediaName: e.target.value })}
+                />
+              </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
                   <Zap className="w-3 h-3" /> 代码位ID
@@ -346,8 +340,8 @@ export default function CodeSlotData() {
           <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead className="bg-black/5 dark:bg-white/5 backdrop-blur-md sticky top-0 z-20">
               <tr>
-                <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">代码位ID</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">代码位名称</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">所属媒体</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border text-right">展现量</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border text-right">点击量</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border text-right">点击率</th>
@@ -362,8 +356,18 @@ export default function CodeSlotData() {
               {/* List Rows */}
               {listData.map((row, idx) => (
                 <tr key={idx} className="group hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">{row.codeSlotId}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text">{row.codeSlotName || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-primary font-bold border border-border">
+                        <Zap size={14} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-text">{row.codeSlotName || '-'}</span>
+                        <span className="text-[10px] text-text-muted mt-0.5 font-medium">代码位ID: {row.codeSlotId}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted font-medium">{row.mediaName || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted text-right">{(row.impressions || 0).toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted text-right">{(row.clicks || 0).toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted text-right">{((row.ctr || 0) * 100).toFixed(2)}%</td>

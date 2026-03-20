@@ -1,0 +1,65 @@
+<h2>最终构想：智能数据同步工作台 (Final Workspace Concept)</h2>
+<p class="subtitle">通过 OCR + 启发式解析 + 映射记忆，彻底告别 Excel 手动录入</p>
+
+<div class="mockup">
+  <div class="mockup-header">数据同步工作台预览</div>
+  <div class="mockup-body">
+    <div class="section">
+      <div class="placeholder" style="height: 100px; background: #f5f5f7; border: 2px dashed #0071e3; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center;">
+        <p style="color: #0071e3;">📸 <strong>Ctrl+V 直接粘贴</strong> 或 拖入多张微信截图</p>
+      </div>
+    </div>
+    
+    <div class="section">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+        <tr style="background: #e5e5e7; text-align: left;">
+          <th style="padding: 8px;">状态</th>
+          <th style="padding: 8px;">日期 (智能提取)</th>
+          <th style="padding: 8px;">代码位 (样式特征匹配)</th>
+          <th style="padding: 8px;">展现 (最大整数)</th>
+          <th style="padding: 8px;">点击 (次大整数)</th>
+          <th style="padding: 8px;">收入 (最大小数)</th>
+          <th style="padding: 8px;">CTR (%)</th>
+        </tr>
+        <tr style="border-bottom: 1px solid #d1d1d6;">
+          <td style="padding: 8px; color: #34c759;">✓ 匹配</td>
+          <td style="padding: 8px;"><input value="2025-07-17" style="border:none; background:transparent; width: 80px;"></td>
+          <td style="padding: 8px; color: #ff3b30; font-weight: bold;">新 1</td>
+          <td style="padding: 8px;">152,741</td>
+          <td style="padding: 8px;">2,274</td>
+          <td style="padding: 8px;">239.91</td>
+          <td style="padding: 8px;">1.49%</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #d1d1d6; background: rgba(255, 159, 10, 0.05);">
+          <td style="padding: 8px; color: #ff9f0a;">⚠ 未匹配</td>
+          <td style="padding: 8px;"><input value="2025-07-17" style="border:none; background:transparent; width: 80px;"></td>
+          <td style="padding: 8px;"><select style="background:transparent; border: 1px solid #ff9f0a; padding: 2px;"><option>新 2 (识别中...)</option><option>代码位 B</option></select></td>
+          <td style="padding: 8px;">89,320</td>
+          <td style="padding: 8px;">1,105</td>
+          <td style="padding: 8px;">145.20</td>
+          <td style="padding: 8px;">1.24%</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+      <button class="mock-button" style="background: #86868b;">清空</button>
+      <button class="mock-button">确认并导入系统</button>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>系统自动化环节</h4>
+    <ul>
+      <li><strong>全自动分类</strong>：根据数值大小和特殊样式（红色、日期格式、%）自动归类字段。</li>
+      <li><strong>自动反算指标</strong>：ecpm 和 acp 由系统公式精确生成，无需识别。</li>
+      <li><strong>智能纠错记忆</strong>：您手动关联一次代码位后，系统永久记住该视觉特征。</li>
+    </ul>
+  </div>
+</div>
+
+<div class="indicator-bar">
+  <span>这个工作台能为您每天的数据录入节省至少 80% 的时间。如果没有异议，我将开始制定详细的技术方案（Spec）。</span>
+</div>

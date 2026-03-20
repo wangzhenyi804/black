@@ -68,3 +68,10 @@ CREATE TABLE IF NOT EXISTS stats (
     FOREIGN KEY (media_id) REFERENCES media(id),
     FOREIGN KEY (code_slot_id) REFERENCES code_slot(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ocr_mapping_history (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    original_text VARCHAR(255) NOT NULL UNIQUE COMMENT 'OCR 识别到的原始文本',
+    target_slot_name VARCHAR(255) NOT NULL COMMENT '关联的系统逻辑代码位名称',
+    last_used_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后一次使用时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

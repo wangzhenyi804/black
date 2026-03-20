@@ -25,12 +25,7 @@ public class CsvUtils {
                     field.setAccessible(true);
                     Object value = field.get(item);
                     if (value == null) return "";
-                    String str = value.toString();
-                    // 处理逗号和引号
-                    if (str.contains(",") || str.contains("\"") || str.contains("\n")) {
-                        str = "\"" + str.replace("\"", "\"\"") + "\"";
-                    }
-                    return str;
+                    return escape(value.toString());
                 } catch (IllegalAccessException e) {
                     return "";
                 }
@@ -38,6 +33,17 @@ public class CsvUtils {
         }).collect(Collectors.joining("\n"));
 
         return header + "\n" + body;
+    }
+
+    /**
+     * 转义 CSV 字段
+     */
+    public static String escape(String str) {
+        if (str == null) return "";
+        if (str.contains(",") || str.contains("\"") || str.contains("\n")) {
+            return "\"" + str.replace("\"", "\"\"") + "\"";
+        }
+        return str;
     }
 
     /**
@@ -72,7 +78,7 @@ public class CsvUtils {
         return result;
     }
 
-    private static String[] parseCsvLine(String line) {
+    public static List<String> parseCsvLineList(String line) {
         List<String> values = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         boolean inQuotes = false;
@@ -94,6 +100,10 @@ public class CsvUtils {
             }
         }
         values.add(sb.toString().trim());
-        return values.toArray(new String[0]);
+        return values;
+    }
+
+    public static String[] parseCsvLine(String line) {
+        return parseCsvLineList(line).toArray(new String[0]);
     }
 }

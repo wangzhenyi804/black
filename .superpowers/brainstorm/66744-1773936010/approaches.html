@@ -1,0 +1,47 @@
+<h2>智能数据导入工作台：3 种构想</h2>
+<p class="subtitle">目标：消除“手动录入 Excel”的繁琐步骤，让图片、表格数据一键同步</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>方案 A：集成式“智能同步”工作台</h3>
+      <p>后端集成高精度 OCR。用户直接在系统中拖入图片，系统自动识别并与代码位库匹配。提供类似在线 Excel 的预览编辑区，支持数据追回和映射记忆。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>方案 B：纯前端“极速识别”插件</h3>
+      <p>利用前端 OCR 库（如 Tesseract.js）。在浏览器本地完成识别，不需要上传服务器，响应极快。适合格式非常固定、保密性要求极高的场景。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>方案 C：剪贴板“即插即用”同步器</h3>
+      <p>无需上传文件。管理员直接在图片上右键复制，在系统内粘贴，系统提取文本并弹出“快速匹配”小窗，手动勾选对应代码位后即刻同步。</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>核心优势</h4>
+      <ul>
+        <li>大幅减少人工二次录入的时间</li>
+        <li>降低手动操作导致的财务误差</li>
+        <li>统一所有渠道的数据录入入口</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>技术挑战</h4>
+      <ul>
+        <li>无表头图片的数据列定位</li>
+        <li>代码位名称的模糊匹配精度</li>
+        <li>多张图片追加时的去重逻辑</li>
+      </ul>
+    </div>
+  </div>
+</div>
