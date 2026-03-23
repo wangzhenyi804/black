@@ -1,0 +1,62 @@
+<h2>方案 A+：智能启发式同步工作台 (Smart Heuristic Sync)</h2>
+<p class="subtitle">针对微信截图优化的自动识别与匹配流程</p>
+
+<div class="mockup">
+  <div class="mockup-header">场景模拟：处理微信截图</div>
+  <div class="mockup-body">
+    <div class="split">
+      <div class="section">
+        <p class="label">输入：微信截图</p>
+        <div class="placeholder" style="height: 120px; display: flex; align-items: center; justify-content: center; background: #e8f4fd; color: #0071e3;">
+          <p>📸 拖入或粘贴微信截图<br><small>(支持直接从剪贴板粘贴)</small></p>
+        </div>
+      </div>
+      <div class="section">
+        <p class="label">输出：智能识别结果</p>
+        <div class="pros-cons" style="grid-template-columns: 1fr;">
+          <div class="pros">
+            <h4>基于启发式规则自动分类</h4>
+            <ul>
+              <li><strong>展现量</strong>：识别结果中最大的整数 (152,741)</li>
+              <li><strong>点击量</strong>：识别结果中第二大的整数 (2,274)</li>
+              <li><strong>收入</strong>：识别结果中最大的小数 (239.91)</li>
+              <li><strong>点击率</strong>：带 % 符号的文本 (1.49%)</li>
+              <li><strong>代码位</strong>：红色字符或模糊匹配 (新1)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="label">核心交互逻辑</h3>
+  <div class="options" data-multiselect>
+    <div class="option selected" data-choice="paste" onclick="toggleSelect(this)">
+      <div class="letter">1</div>
+      <div class="content">
+        <h3>剪贴板直接粘贴</h3>
+        <p>管理员从微信收到图片后，右键“复制”，在工作台直接 Ctrl+V，系统即刻开始 OCR 处理。</p>
+      </div>
+    </div>
+    <div class="option selected" data-choice="heuristic" onclick="toggleSelect(this)">
+      <div class="letter">2</div>
+      <div class="content">
+        <h3>智能启发式解析</h3>
+        <p>按照您提供的逻辑（最大整数、次大整数等）自动填充表格，并根据系统算法计算 ecpm/acp。</p>
+      </div>
+    </div>
+    <div class="option selected" data-choice="edit" onclick="toggleSelect(this)">
+      <div class="letter">3</div>
+      <div class="content">
+        <h3>多图追加预览区</h3>
+        <p>支持连续粘贴多张图片，数据在下方实时累加。提供红色/高亮提示那些匹配度较低的代码位名称。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="indicator-bar">
+  <span>这种针对性的“启发式解析”逻辑能极大提高无表头图片的识别成功率。您觉得还有哪些特殊的数值特征吗？</span>
+</div>

@@ -151,7 +151,7 @@ export default function Login() {
             <img src="/black.svg" className="w-9 h-9 object-contain transition-transform duration-500 group-hover:scale-110" alt="Logo" />
           </div>
           <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-            Black
+            犀瞰聚合
           </span>
         </div>
 
@@ -209,7 +209,7 @@ export default function Login() {
               <img src="/black.svg" className="w-18 h-18 object-contain" alt="Logo" />
             </div>
             <span className="text-2xl font-black tracking-tight text-text">
-              Black
+              犀瞰聚合
             </span>
           </div>
 

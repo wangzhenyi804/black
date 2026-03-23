@@ -9,6 +9,7 @@ public class StatsQueryDTO {
     private LocalDate endDate;
     private Long codeSlotId;
     private String codeSlotName;
+    private String mediaName;
     private String terminal;
     private String type;
     

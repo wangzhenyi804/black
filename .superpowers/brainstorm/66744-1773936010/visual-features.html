@@ -1,0 +1,55 @@
+<h2>智能解析：视觉特征匹配 (Visual Feature Matching)</h2>
+<p class="subtitle">利用“红色/特殊字体”这一特征精准锁定代码位名称</p>
+
+<div class="mockup">
+  <div class="mockup-header">OCR 深度解析逻辑</div>
+  <div class="mockup-body">
+    <div class="split">
+      <div class="section">
+        <p class="label">图片特征分析</p>
+        <div style="padding: 1rem; border: 1px dashed var(--selected-border); border-radius: 8px; background: var(--selected-bg);">
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <span style="color: #ff3b30; font-weight: bold; font-size: 1.2rem; font-family: 'PingFang SC', serif;">新 1</span>
+            <span style="color: var(--text-primary); font-size: 1.1rem; font-weight: 500;">152,741</span>
+            <span style="color: var(--text-primary); font-size: 1.1rem; font-weight: 500;">239.91</span>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1rem;">
+            🔍 检测到 <span style="color: #ff3b30;">#ff3b30 (红色)</span> 或 <span style="font-family: serif;">非标字体</span> 元素
+          </p>
+        </div>
+      </div>
+      <div class="section">
+        <p class="label">解析引擎优先级</p>
+        <div class="pros">
+          <ul>
+            <li><strong>优先提取</strong>：非数字且样式迥异的字符串 (新 1)</li>
+            <li><strong>关联规则</strong>：将该字符串标记为“待匹配代码位”</li>
+            <li><strong>模糊增强</strong>：与数据库比对时，优先搜索相似名称</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3 class="label">数据确认流程优化</h3>
+  <div class="cards">
+    <div class="card selected" data-choice="auto-highlight" onclick="toggleSelect(this)">
+      <div class="card-body">
+        <h3>视觉差异识别</h3>
+        <p>系统在预览表格中将“疑似代码位”单独列出。如果有识别误差，您可以点击单元格快速搜索系统内的代码位进行手动绑定。</p>
+      </div>
+    </div>
+    <div class="card" data-choice="batch-mapping" onclick="toggleSelect(this)">
+      <div class="card-body">
+        <h3>批量映射规则</h3>
+        <p>一旦您手动纠正了“新 1”对应的是“代码位A”，系统会记住这个“视觉->逻辑”的映射关系，下次无需再改。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="indicator-bar">
+  <span>利用颜色和字体特征，我们能极大地降低误识别率。除了这些，图片中还有“日期”或者“媒体名称”之类的关键信息吗？</span>
+</div>

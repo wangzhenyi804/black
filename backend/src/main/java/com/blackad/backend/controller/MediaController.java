@@ -182,13 +182,28 @@ public class MediaController {
         if (StringUtils.hasText(category) && !"全部".equals(category)) queryWrapper.eq("category", category);
         if (StringUtils.hasText(status) && !"全部".equals(status)) queryWrapper.eq("status", status);
         
+        queryWrapper.orderByDesc("created_at");
+        queryWrapper.last("LIMIT 300"); // Limit to 300 records as requested
+
         List<Media> list = mediaService.list(queryWrapper);
-        String csv = CsvUtils.toCsv(list, Media.class);
-        byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
+        
+        StringBuilder csv = new StringBuilder("\uFEFF"); // BOM for Excel UTF-8 compatibility
+        csv.append("媒体名称,媒体ID,域名,分类,状态\n");
+        
+        for (Media media : list) {
+            csv.append(CsvUtils.escape(media.getName())).append(",")
+               .append(media.getId()).append(",")
+               .append(CsvUtils.escape(media.getDomain())).append(",")
+               .append(CsvUtils.escape(media.getCategory())).append(",")
+               .append(CsvUtils.escape(media.getStatus()))
+               .append("\n");
+        }
+
+        byte[] bytes = csv.toString().getBytes(StandardCharsets.UTF_8);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=media_export.csv")
-                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
                 .body(bytes);
     }
 

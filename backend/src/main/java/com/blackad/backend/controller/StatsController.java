@@ -2,6 +2,8 @@ package com.blackad.backend.controller;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -15,15 +17,15 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,11 +35,14 @@ import org.springframework.web.multipart.MultipartFile;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.blackad.backend.dto.DashboardStatsDTO;
+import com.blackad.backend.dto.ImportPreviewDTO;
 import com.blackad.backend.dto.StatsCodeSlotDTO;
 import com.blackad.backend.dto.StatsQueryDTO;
 import com.blackad.backend.dto.StatsTrendDTO;
 import com.blackad.backend.entity.Stats;
 import com.blackad.backend.entity.User;
+import com.blackad.backend.service.OcrMappingHistoryService;
+import com.blackad.backend.service.OcrService;
 import com.blackad.backend.service.StatsService;
 import com.blackad.backend.service.UserService;
 import com.blackad.backend.utils.CsvUtils;
@@ -50,6 +55,12 @@ public class StatsController {
     private StatsService statsService;
 
     @Autowired
+    private OcrService ocrService;
+
+    @Autowired
+    private OcrMappingHistoryService mappingHistoryService;
+
+    @Autowired
     private com.blackad.backend.service.CodeSlotService codeSlotService;
 
     @Autowired
@@ -60,13 +71,14 @@ public class StatsController {
 
     // Helper to inject user context into DTO
     private StatsQueryDTO buildQueryDTO(UserDetails userDetails, LocalDate startDate, LocalDate endDate,
-                                      Long codeSlotId, String codeSlotName, String terminal, String type,
+                                      Long codeSlotId, String codeSlotName, String mediaName, String terminal, String type,
                                       Integer page, Integer size) {
         StatsQueryDTO dto = new StatsQueryDTO();
         dto.setStartDate(startDate);
         dto.setEndDate(endDate);
         dto.setCodeSlotId(codeSlotId);
         dto.setCodeSlotName(codeSlotName);
+        dto.setMediaName(mediaName);
         dto.setTerminal(terminal);
         dto.setType(type);
         if (page != null) dto.setPage(page);
@@ -93,12 +105,51 @@ public class StatsController {
                                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
                                                   @RequestParam(required = false) Long codeSlotId,
                                                   @RequestParam(required = false) String codeSlotName,
+                                                  @RequestParam(required = false) String mediaName,
                                                   @RequestParam(required = false) String terminal,
                                                   @RequestParam(required = false) String type,
                                                   @RequestParam(defaultValue = "1") int page,
                                                   @RequestParam(defaultValue = "10") int size) {
-        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, terminal, type, page, size);
+        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, page, size);
         return statsService.getCodeSlotStats(dto);
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportStats(@AuthenticationPrincipal UserDetails userDetails,
+                                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                                              @RequestParam(required = false) Long codeSlotId,
+                                              @RequestParam(required = false) String codeSlotName,
+                                              @RequestParam(required = false) String mediaName,
+                                              @RequestParam(required = false) String terminal,
+                                              @RequestParam(required = false) String type) {
+        // Limit to 300 records as requested
+        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, 1, 300);
+        List<StatsCodeSlotDTO> list = statsService.getCodeSlotStats(dto).getRecords();
+        
+        StringBuilder csv = new StringBuilder("\uFEFF"); // BOM for Excel UTF-8 compatibility
+        csv.append("代码位名称,代码位ID,所属媒体,展现量,点击量,点击率,eCPM,ACP,分成前收入,系数,分成后收入\n");
+        
+        for (StatsCodeSlotDTO row : list) {
+            csv.append(CsvUtils.escape(row.getCodeSlotName())).append(",")
+               .append(row.getCodeSlotId()).append(",")
+               .append(CsvUtils.escape(row.getMediaName())).append(",")
+               .append(row.getImpressions() != null ? row.getImpressions() : 0).append(",")
+               .append(row.getClicks() != null ? row.getClicks() : 0).append(",")
+               .append(String.format("%.2f%%", (row.getCtr() != null ? row.getCtr() * 100 : 0.0))).append(",")
+               .append("¥").append(row.getEcpm() != null ? row.getEcpm().setScale(2, RoundingMode.HALF_UP) : "0.00").append(",")
+               .append("¥").append(row.getAcp() != null ? row.getAcp().setScale(2, RoundingMode.HALF_UP) : "0.00").append(",")
+               .append("¥").append(row.getRevenue() != null ? row.getRevenue().setScale(2, RoundingMode.HALF_UP) : "0.00").append(",")
+               .append(row.getRatio() != null ? row.getRatio().setScale(2, RoundingMode.HALF_UP) : "1.00").append(",")
+               .append("¥").append(row.getAfterSharingRevenue() != null ? row.getAfterSharingRevenue().setScale(2, RoundingMode.HALF_UP) : "0.00")
+               .append("\n");
+        }
+        
+        byte[] bytes = csv.toString().getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=stats_export.csv")
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
+                .body(bytes);
     }
 
     @GetMapping("/summary")
@@ -107,12 +158,10 @@ public class StatsController {
                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
                                   @RequestParam(required = false) Long codeSlotId,
                                   @RequestParam(required = false) String codeSlotName,
+                                  @RequestParam(required = false) String mediaName,
                                   @RequestParam(required = false) String terminal,
                                   @RequestParam(required = false) String type) {
-        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, terminal, type, null, null);
-        // Security Patch: We need to filter by user. 
-        // For now, let's just proceed. The previous overview method checked role.
-        // I'll add userId to DTO in a separate step if needed, but for now let's get the controller structure right.
+        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, null, null);
         return statsService.getSummary(dto);
     }
 
@@ -122,9 +171,10 @@ public class StatsController {
                                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
                                       @RequestParam(required = false) Long codeSlotId,
                                       @RequestParam(required = false) String codeSlotName,
+                                      @RequestParam(required = false) String mediaName,
                                       @RequestParam(required = false) String terminal,
                                       @RequestParam(required = false) String type) {
-        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, terminal, type, null, null);
+        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, null, null);
         return statsService.getTrend(dto);
     }
 
@@ -134,11 +184,12 @@ public class StatsController {
                                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
                                       @RequestParam(required = false) Long codeSlotId,
                                       @RequestParam(required = false) String codeSlotName,
+                                      @RequestParam(required = false) String mediaName,
                                       @RequestParam(required = false) String terminal,
                                       @RequestParam(required = false) String type,
                                       @RequestParam(defaultValue = "1") int page,
                                       @RequestParam(defaultValue = "10") int size) {
-        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, terminal, type, page, size);
+        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, page, size);
         return statsService.getList(dto);
     }
 
@@ -206,8 +257,9 @@ public class StatsController {
         boolean isThirdPartyFormat = data.get(0).containsKey("代码位") || data.get(0).containsKey("计费名");
 
         List<Stats> statsList = new ArrayList<>();
+        List<Stats> updateList = new ArrayList<>();
         int successCount = 0;
-        int skipCount = 0;
+        int updateCount = 0;
         int failCount = 0;
         List<String> errors = new ArrayList<>();
         
@@ -298,14 +350,29 @@ public class StatsController {
                     }
                     
                     // Check for duplicate data (same codeSlotId + date)
-                    long existingCount = statsService.query()
+                    Stats existingStats = statsService.query()
                         .eq("code_slot_id", slot.getId())
                         .eq("date", date)
-                        .count();
+                        .one();
                     
-                    if (existingCount > 0) {
-                        skipCount++;
-                        continue; // Skip this row, don't throw exception to avoid failing the whole batch
+                    if (existingStats != null) {
+                        existingStats.setImpressions(parseLongSafe(row.getOrDefault("展现", "0")));
+                        existingStats.setClicks(parseLongSafe(row.getOrDefault("点击", "0")));
+                        existingStats.setRevenue(parseBigDecimalSafe(row.getOrDefault("收入", "0.0")));
+                        
+                        // Extra data
+                        Map<String, String> extra = new HashMap<>(row);
+                        extra.remove("时间");
+                        extra.remove("代码位");
+                        extra.remove("代码位ID");
+                        extra.remove("展现");
+                        extra.remove("点击");
+                        extra.remove("收入");
+                        existingStats.setExtraData(extra.toString());
+                        
+                        updateList.add(existingStats);
+                        updateCount++;
+                        continue; 
                     }
                     
                     s.setDate(date);
@@ -358,14 +425,28 @@ public class StatsController {
                     }
                     
                     // Check for duplicate data (same codeSlotId + date)
-                    long existingCount = statsService.query()
+                    Stats existingStats = statsService.query()
                         .eq("code_slot_id", s.getCodeSlotId())
                         .eq("date", date)
-                        .count();
+                        .one();
                     
-                    if (existingCount > 0) {
-                        skipCount++;
-                        continue; // Skip this row
+                    if (existingStats != null) {
+                        existingStats.setImpressions(parseLongSafe(row.get("impressions")));
+                        existingStats.setClicks(parseLongSafe(row.get("clicks")));
+                        existingStats.setRevenue(parseBigDecimalSafe(row.get("income")));
+                        
+                        Map<String, String> extra = new HashMap<>(row);
+                        extra.remove("date");
+                        extra.remove("codeSlotId");
+                        extra.remove("impressions");
+                        extra.remove("clicks");
+                        extra.remove("income");
+                        extra.remove("ratio");
+                        existingStats.setExtraData(extra.toString());
+                        
+                        updateList.add(existingStats);
+                        updateCount++;
+                        continue; 
                     }
                     
                     s.setDate(date);
@@ -407,11 +488,16 @@ public class StatsController {
         if (!statsList.isEmpty()) {
             statsService.saveBatch(statsList);
         }
+        if (!updateList.isEmpty()) {
+            statsService.updateBatchById(updateList);
+        }
         
         response.put("success", true);
-        String msg = "成功导入 " + successCount + " 条记录。";
-        if (skipCount > 0) {
-            msg += " 跳过重复数据 " + skipCount + " 条。";
+        String msg = "成功新增 " + successCount + " 条数据";
+        if (updateCount > 0) {
+            msg += "，更新 " + updateCount + " 条数据。";
+        } else {
+            msg += "。";
         }
         response.put("message", msg);
         if (failCount > 0) {
@@ -451,6 +537,110 @@ public class StatsController {
             }
         }
         return null;
+    }
+
+    @PostMapping("/preview")
+    public List<ImportPreviewDTO> previewImport(@RequestParam("file") MultipartFile file) {
+        return ocrService.parseFile(file);
+    }
+
+    @PostMapping("/confirm-import")
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<Map<String, Object>> confirmImport(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, Object> payload) {
+        
+        Long selectedUserId = Long.valueOf(payload.get("user_id").toString());
+        List<Map<String, Object>> rows = (List<Map<String, Object>>) payload.get("rows");
+        
+        int successCount = 0;
+        int updateCount = 0;
+        
+        for (Map<String, Object> row : rows) {
+            String slotName = (String) row.get("code_slot_name");
+            String originalText = (String) row.get("original_text");
+            String mediaName = (String) row.get("media_name");
+            Long rowUserId = row.get("user_id") != null ? Long.valueOf(row.get("user_id").toString()) : selectedUserId;
+
+            if (mediaName == null || mediaName.isEmpty()) mediaName = "Image";
+            
+            // 1. 查找或创建媒体
+            com.blackad.backend.entity.Media media = mediaService.query()
+                    .eq("name", mediaName)
+                    .eq("user_id", rowUserId) // 增加用户维度，防止不同用户的媒体混淆
+                    .one();
+            if (media == null) {
+                media = new com.blackad.backend.entity.Media();
+                media.setName(mediaName);
+                media.setDomain(mediaName.toLowerCase() + ".com");
+                media.setType("Website"); // 设置默认类型，防止数据库报错
+                media.setUserId(rowUserId);
+                media.setStatus("APPROVED");
+                media.setCreatedAt(LocalDateTime.now());
+                mediaService.save(media);
+            }
+            
+            // 2. 查找或创建代码位
+            com.blackad.backend.entity.CodeSlot slot = codeSlotService.getByName(slotName);
+            if (slot == null) {
+                slot = new com.blackad.backend.entity.CodeSlot();
+                slot.setName(slotName);
+                slot.setCodeSlotId(slotName); // 默认逻辑 ID 同名称
+                slot.setMediaId(media.getId());
+                slot.setUserId(rowUserId);
+                slot.setType("Banner"); // 设置默认类型
+                slot.setTerminal("H5");
+                slot.setStatus("ACTIVE");
+                slot.setCreatedAt(LocalDateTime.now());
+                slot.setUpdatedAt(LocalDateTime.now());
+                codeSlotService.save(slot);
+            }
+            
+            // 3. 记录映射关系
+            if (originalText != null && !originalText.isEmpty()) {
+                mappingHistoryService.saveOrUpdateMapping(originalText, slotName);
+            }
+            
+            // 4. 插入统计数据
+            Stats stats = new Stats();
+            stats.setCodeSlotId(slot.getId());
+            stats.setUserId(rowUserId);
+            stats.setMediaId(media.getId());
+            stats.setDate(LocalDate.parse((String) row.get("date")));
+            stats.setImpressions(Long.valueOf(row.get("impressions").toString()));
+            stats.setClicks(Long.valueOf(row.get("clicks").toString()));
+            stats.setRevenue(new BigDecimal(row.get("revenue").toString()));
+            stats.setRatio(slot.getRevenueRatio() != null ? slot.getRevenueRatio() : new BigDecimal("1.0"));
+            stats.setCreateTime(LocalDateTime.now());
+            
+            // 检查重复
+            Stats existingStats = statsService.query()
+                .eq("code_slot_id", stats.getCodeSlotId())
+                .eq("date", stats.getDate())
+                .one();
+            
+            if (existingStats == null) {
+                statsService.save(stats);
+                successCount++;
+            } else {
+                existingStats.setImpressions(stats.getImpressions());
+                existingStats.setClicks(stats.getClicks());
+                existingStats.setRevenue(stats.getRevenue());
+                statsService.updateById(existingStats);
+                updateCount++;
+            }
+        }
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        String msg = "成功新增 " + successCount + " 条数据";
+        if (updateCount > 0) {
+            msg += "，更新 " + updateCount + " 条数据。";
+        } else {
+            msg += "。";
+        }
+        response.put("message", msg);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/batch")

@@ -35,6 +35,20 @@ const STATS_AUTH_OPTIONS = [
   { value: 'none', label: '无法给予授权或使用其他统计' }
 ];
 
+const initialFormData: Partial<Media> = {
+  name: '',
+  domain: '',
+  category: '',
+  type: 'Website',
+  icp_code: '',
+  note: '',
+  description: '',
+  daily_visits: '1w以下',
+  stats_auth_type: 'none',
+  agent_auth_url: '',
+  copyright_url: ''
+};
+
 export default function Media() {
   const { isAdmin } = useAuth();
   const toast = useToast();
@@ -49,24 +63,13 @@ export default function Media() {
     status: '全部'
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isBatchMode, setIsBatchMode] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<Partial<Media>>({
-    name: '',
-    domain: '',
-    category: '',
-    type: 'Website',
-    icp_code: '',
-    note: '',
-    description: '',
-    daily_visits: '1w以下',
-    stats_auth_type: 'none',
-    agent_auth_url: '',
-    copyright_url: ''
-  });
+  const [formData, setFormData] = useState<Partial<Media>>(initialFormData);
 
   const [uploading, setUploading] = useState({ agent: false, copyright: false });
 
@@ -179,20 +182,7 @@ export default function Media() {
       }
       setIsModalOpen(false);
       setEditingId(null);
-      setFormData({
-        name: '',
-        domain: '',
-        category: '',
-        type: 'Website',
-        status: '',
-        icp_code: '',
-        note: '',
-        description: '',
-        daily_visits: '1w以下',
-        stats_auth_type: 'none',
-        agent_auth_url: '',
-        copyright_url: ''
-      });
+      setFormData(initialFormData);
       fetchMedia();
     } catch (err) {
       console.error('Submit error:', err);
@@ -219,6 +209,12 @@ export default function Media() {
     setIsModalOpen(true);
   };
 
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingId(null);
+    setFormData(initialFormData);
+  };
+
   const handleDelete = async () => {
     if (!deleteConfirmId) return;
     try {
@@ -227,6 +223,7 @@ export default function Media() {
         await api.delete('/media/batch', { data: selectedIds });
         toast.success(`成功删除 ${selectedIds.length} 个媒体`);
         setSelectedIds([]);
+        setIsBatchMode(false);
       } else {
         // Single delete
         await api.delete(`/media/${deleteConfirmId}`);
@@ -255,15 +252,35 @@ export default function Media() {
     );
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
       case 'APPROVED':
-      case '审核通过': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+      case '审核通过': 
+        return { 
+          label: '正常', 
+          dot: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]',
+          text: 'text-emerald-500'
+        };
       case 'PENDING':
-      case '待初审': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      case '待初审': 
+        return { 
+          label: '待初审', 
+          dot: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]',
+          text: 'text-amber-500'
+        };
       case 'REJECTED':
-      case '审核未通过': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-      default: return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+      case '审核未通过': 
+        return { 
+          label: '未通过', 
+          dot: 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]',
+          text: 'text-rose-500'
+        };
+      default: 
+        return { 
+          label: status, 
+          dot: 'bg-zinc-500 shadow-[0_0_8px_rgba(113,113,122,0.4)]',
+          text: 'text-zinc-500'
+        };
     }
   };
 
@@ -279,12 +296,20 @@ export default function Media() {
             <h1 className="text-lg lg:text-xl font-bold text-text tracking-tight">媒体管理</h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            {selectedIds.length > 0 && (
+            {isAdmin && (
               <button
-                onClick={() => setDeleteConfirmId(-1)}
-                className="flex-1 sm:flex-none bg-rose-500/10 text-rose-500 px-3 lg:px-4 py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-rose-500/20 transition-all flex items-center justify-center gap-1.5 lg:gap-2"
+                onClick={() => {
+                  setIsBatchMode(!isBatchMode);
+                  if (isBatchMode) setSelectedIds([]);
+                }}
+                className={clsx(
+                  "px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl text-[10px] lg:text-sm font-bold transition-all flex items-center gap-1.5 lg:gap-2",
+                  isBatchMode 
+                    ? "bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90" 
+                    : "bg-black/5 dark:bg-white/5 text-text-muted hover:text-text"
+                )}
               >
-                <Trash2 size={14} className="lg:size-4" /> 批量删除 ({selectedIds.length})
+                批量操作
               </button>
             )}
             <button
@@ -298,7 +323,11 @@ export default function Media() {
               <input type="file" className="hidden" accept=".csv" onChange={handleImport} />
             </label>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setFormData(initialFormData);
+                setEditingId(null);
+                setIsModalOpen(true);
+              }}
               className="flex-1 sm:flex-none bg-primary text-white px-3 lg:px-4 py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-1.5 lg:gap-2"
             >
               <Plus size={16} className="lg:size-[18px]" /> 新增
@@ -381,14 +410,16 @@ export default function Media() {
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="sticky top-0 bg-black/5 dark:bg-white/5 backdrop-blur-md z-10 border-b border-border">
               <tr>
-                <th className="px-6 py-4 w-12">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
-                    checked={mediaList.length > 0 && selectedIds.length === mediaList.length}
-                    onChange={handleSelectAll}
-                  />
-                </th>
+                {isBatchMode && (
+                  <th className="px-6 py-4 w-12">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                      checked={mediaList.length > 0 && selectedIds.length === mediaList.length}
+                      onChange={handleSelectAll}
+                    />
+                  </th>
+                )}
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">媒体名称</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">域名</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">分类</th>
@@ -399,20 +430,22 @@ export default function Media() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr><td colSpan={7} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
+                <tr><td colSpan={6 + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
               ) : mediaList.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
+                <tr><td colSpan={6 + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
               ) : (
                 mediaList.map((media) => (
                   <tr key={media.id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
-                        checked={selectedIds.includes(media.id)}
-                        onChange={() => handleSelectOne(media.id)}
-                      />
-                    </td>
+                    {isBatchMode && (
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                          checked={selectedIds.includes(media.id)}
+                          onChange={() => handleSelectOne(media.id)}
+                        />
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-primary font-bold border border-border">
@@ -424,9 +457,19 @@ export default function Media() {
                     <td className="px-6 py-4 text-sm text-text-muted font-medium">{media.domain}</td>
                     <td className="px-6 py-4 text-sm text-text-muted font-medium">{media.category}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border ${getStatusColor(media.status)}`}>
-                        {media.status}
-                      </span>
+                      {(() => {
+                        const config = getStatusConfig(media.status);
+                        return (
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${config.dot}`} />
+                            {config.label !== '正常' && (
+                              <span className={`text-sm font-bold ${config.text}`}>
+                                {config.label}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 text-sm text-text-muted font-medium">{new Date(media.created_at).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-right">
@@ -481,7 +524,7 @@ export default function Media() {
                 </div>
                 <h3 className="text-lg font-bold text-text">{editingId ? '编辑媒体' : '新增媒体'}</h3>
               </div>
-              <button onClick={() => { setIsModalOpen(false); setEditingId(null); }} className="p-2 text-text-muted hover:text-text transition-colors">
+              <button onClick={handleCloseModal} className="p-2 text-text-muted hover:text-text transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -600,9 +643,6 @@ export default function Media() {
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-2">
                     <span className="text-rose-500">*</span> 统计查看授权
                   </label>
-                  <p className="text-[10px] text-text-muted leading-relaxed mb-2">
-                    请将该网站(域名)的流量统计查看权限授权给 <span className="text-text font-bold">账号:星辰加运营组</span> <span className="text-text font-bold">邮箱:xingchenjia@star-media.cn</span>
-                  </p>
                   <div className="flex flex-col gap-3">
                     {STATS_AUTH_OPTIONS.map(opt => (
                       <label key={opt.value} className="flex items-center gap-3 cursor-pointer group">
@@ -693,7 +733,7 @@ export default function Media() {
               <div className="flex gap-4 pt-6 sticky bottom-0 bg-card pb-2 border-t border-border">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={handleCloseModal}
                   className="flex-1 py-3 text-sm font-bold text-text-muted bg-black/5 dark:bg-white/5 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95"
                 >
                   取消
@@ -709,7 +749,39 @@ export default function Media() {
           </div>
         </div>
       )}
-      {/* Delete Confirmation Modal */}
+      {/* Batch Actions Bar */}
+      {isBatchMode && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-card border border-border rounded-full shadow-2xl px-6 py-3 flex items-center gap-4 z-50 animate-in slide-in-from-bottom-8">
+          <div className="text-sm font-bold text-text flex items-center gap-2">
+            已选择 <span className="text-primary">{selectedIds.length}</span> 项
+          </div>
+          <div className="w-px h-4 bg-border" />
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (selectedIds.length === 0) {
+                  toast.error('请先选择要删除的媒体');
+                  return;
+                }
+                setDeleteConfirmId(-1);
+              }}
+              disabled={selectedIds.length === 0}
+              className="px-4 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 size={14} /> 批量删除
+            </button>
+            <button
+              onClick={() => {
+                setIsBatchMode(false);
+                setSelectedIds([]);
+              }}
+              className="px-4 py-2 bg-black/5 dark:bg-white/5 text-text-muted rounded-xl text-xs font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
       <DeleteConfirmModal
         isOpen={!!deleteConfirmId}
         onClose={() => setDeleteConfirmId(null)}

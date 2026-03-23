@@ -114,7 +114,7 @@ export default function Layout() {
           </div>
           {!effectiveCollapsed && (
             <span className="text-xl font-black tracking-tight text-text animate-in fade-in zoom-in-95 duration-500">
-              Black
+              犀瞰聚合
             </span>
           )}
         </div>

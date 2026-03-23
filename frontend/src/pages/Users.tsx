@@ -33,6 +33,7 @@ export default function Users() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isBatchMode, setIsBatchMode] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -111,6 +112,7 @@ export default function Users() {
         await api.delete('/users/batch', { data: selectedIds });
         toast.success(`成功删除 ${selectedIds.length} 个用户`);
         setSelectedIds([]);
+        setIsBatchMode(false);
       } else {
         await api.delete(`/users/${deleteConfirmId}`);
         toast.success('用户已成功删除');
@@ -170,10 +172,10 @@ export default function Users() {
 
   const getStatusConfig = (status: number) => {
     switch (status) {
-      case 1: return { label: '正常运行', color: 'text-emerald-500', dot: 'bg-emerald-500' };
-      case 0: return { label: '已禁用', color: 'text-amber-500', dot: 'bg-amber-500' };
-      case 3: return { label: '已删除', color: 'text-rose-500', dot: 'bg-rose-500' };
-      default: return { label: '未知状态', color: 'text-text-muted', dot: 'bg-zinc-500' };
+      case 1: return { label: '正常', color: 'text-emerald-500', dot: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' };
+      case 0: return { label: '已禁用', color: 'text-amber-500', dot: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' };
+      case 3: return { label: '已删除', color: 'text-rose-500', dot: 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]' };
+      default: return { label: '未知状态', color: 'text-text-muted', dot: 'bg-zinc-500 shadow-[0_0_8px_rgba(113,113,122,0.4)]' };
     }
   };
 
@@ -196,17 +198,21 @@ export default function Users() {
             <h3 className="text-sm lg:text-lg font-bold text-text tracking-tight">创建新用户</h3>
           </div>
           <div className="flex items-center gap-2">
-            {selectedIds.length > 0 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteConfirmId(-1);
-                }}
-                className="bg-rose-500/10 text-rose-500 px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl text-[10px] lg:text-sm font-bold hover:bg-rose-500/20 transition-all flex items-center justify-center gap-1.5 lg:gap-2"
-              >
-                <Trash2 size={14} className="lg:size-4" /> 批量删除 ({selectedIds.length})
-              </button>
-            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsBatchMode(!isBatchMode);
+                if (isBatchMode) setSelectedIds([]);
+              }}
+              className={clsx(
+                "px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl text-[10px] lg:text-sm font-bold transition-all flex items-center gap-1.5 lg:gap-2",
+                isBatchMode 
+                  ? "bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90" 
+                  : "bg-black/5 dark:bg-white/5 text-text-muted hover:text-text"
+              )}
+            >
+              批量操作
+            </button>
             <button className="lg:hidden p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-all">
               <ChevronRight className={clsx("w-4 h-4 text-text-muted transition-transform duration-300", isFormOpen ? "rotate-90" : "")} />
             </button>
@@ -271,14 +277,16 @@ export default function Users() {
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead className="bg-black/5 dark:bg-white/5 backdrop-blur-md sticky top-0 z-20">
               <tr>
-                <th className="px-6 py-4 w-12 border-b border-border">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
-                    checked={users.length > 0 && selectedIds.length === users.length}
-                    onChange={handleSelectAll}
-                  />
-                </th>
+                {isBatchMode && (
+                  <th className="px-6 py-4 w-12 border-b border-border">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                      checked={users.length > 0 && selectedIds.length === users.length}
+                      onChange={handleSelectAll}
+                    />
+                  </th>
+                )}
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">用户信息</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">角色</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">账号状态</th>
@@ -288,14 +296,16 @@ export default function Users() {
             <tbody className="divide-y divide-border">
               {users.map((u) => (
                 <tr key={u.id} className="group hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
-                      checked={selectedIds.includes(u.id)}
-                      onChange={() => handleSelectOne(u.id)}
-                    />
-                  </td>
+                  {isBatchMode && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded border-border bg-black/5 dark:bg-white/5 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                        checked={selectedIds.includes(u.id)}
+                        onChange={() => handleSelectOne(u.id)}
+                      />
+                    </td>
+                  )}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 ring-4 ring-primary/5">
@@ -388,6 +398,37 @@ export default function Users() {
           />
         </div>
       </div>
+
+      {/* Batch Actions Bar */}
+      {isBatchMode && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-card border border-border rounded-full shadow-2xl px-6 py-3 flex items-center gap-4 z-50 animate-in slide-in-from-bottom-8">
+          <div className="text-sm font-bold text-text flex items-center gap-2">
+            已选择 <span className="text-primary">{selectedIds.length}</span> 项
+          </div>
+          <div className="w-px h-4 bg-border" />
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (selectedIds.length === 0) return;
+                setDeleteConfirmId(-1);
+              }}
+              disabled={selectedIds.length === 0}
+              className="px-4 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 size={14} /> 批量删除
+            </button>
+            <button
+              onClick={() => {
+                setIsBatchMode(false);
+                setSelectedIds([]);
+              }}
+              className="px-4 py-2 bg-black/5 dark:bg-white/5 text-text-muted rounded-xl text-xs font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Reset Password Modal */}
       {resetPwd.userId !== 0 && (

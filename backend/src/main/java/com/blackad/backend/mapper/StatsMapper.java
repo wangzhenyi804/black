@@ -20,6 +20,7 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "SELECT " +
             "   MAX(s.code_slot_id) as codeSlotId, " +
             "   cs.name as codeSlotName, " +
+            "   MAX(m.name) as mediaName, " +
             "   SUM(s.impressions) as impressions, " +
             "   SUM(s.clicks) as clicks, " +
             "   SUM(s.revenue) as revenue, " +
@@ -30,14 +31,16 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "   IFNULL(SUM(s.revenue) / NULLIF(SUM(s.clicks), 0), 0) as acp " +
             "FROM stats s " +
             "LEFT JOIN code_slot cs ON s.code_slot_id = cs.id " +
+            "LEFT JOIN media m ON cs.media_id = m.id " +
             "WHERE 1=1 " +
             "<if test='query.startDate != null'> AND s.date &gt;= #{query.startDate} </if>" +
             "<if test='query.endDate != null'> AND s.date &lt;= #{query.endDate} </if>" +
             "<if test='query.codeSlotId != null'> AND s.code_slot_id = #{query.codeSlotId} </if>" +
             "<if test='query.codeSlotName != null and query.codeSlotName != \"\"'> AND cs.name LIKE CONCAT('%', #{query.codeSlotName}, '%') </if>" +
+            "<if test='query.mediaName != null and query.mediaName != \"\"'> AND m.name LIKE CONCAT('%', #{query.mediaName}, '%') </if>" +
             "<if test='query.terminal != null and query.terminal != \"\" and query.terminal != \"全部\"'> AND cs.terminal = #{query.terminal} </if>" +
             "<if test='query.type != null and query.type != \"\" and query.type != \"全部\"'> AND cs.type = #{query.type} </if>" +
-            "<if test='query.userId != null'> AND s.user_id = #{query.userId} </if>" +
+            "<if test='query.userId != null'> AND cs.user_id = #{query.userId} </if>" +
             "GROUP BY cs.name " +
             "ORDER BY CAST(codeSlotId AS CHAR) ASC" +
             "</script>")
@@ -56,14 +59,16 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "   IFNULL(SUM(s.revenue * IFNULL(cs.revenue_ratio, 1.0)) / NULLIF(DATEDIFF(MAX(s.date), MIN(s.date)) + 1, 0), 0) as dailyAvgRevenue " +
             "FROM stats s " +
             "LEFT JOIN code_slot cs ON s.code_slot_id = cs.id " +
+            "LEFT JOIN media m ON cs.media_id = m.id " +
             "WHERE 1=1 " +
             "<if test='query.startDate != null'> AND s.date &gt;= #{query.startDate} </if>" +
             "<if test='query.endDate != null'> AND s.date &lt;= #{query.endDate} </if>" +
             "<if test='query.codeSlotId != null'> AND s.code_slot_id = #{query.codeSlotId} </if>" +
             "<if test='query.codeSlotName != null and query.codeSlotName != \"\"'> AND cs.name LIKE CONCAT('%', #{query.codeSlotName}, '%') </if>" +
+            "<if test='query.mediaName != null and query.mediaName != \"\"'> AND m.name LIKE CONCAT('%', #{query.mediaName}, '%') </if>" +
             "<if test='query.terminal != null and query.terminal != \"\" and query.terminal != \"全部\"'> AND cs.terminal = #{query.terminal} </if>" +
             "<if test='query.type != null and query.type != \"\" and query.type != \"全部\"'> AND cs.type = #{query.type} </if>" +
-            "<if test='query.userId != null'> AND s.user_id = #{query.userId} </if>" +
+            "<if test='query.userId != null'> AND cs.user_id = #{query.userId} </if>" +
             "</script>")
     StatsTrendDTO selectSummary(@Param("query") StatsQueryDTO query);
 
@@ -79,14 +84,16 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "   IFNULL(SUM(s.revenue) / NULLIF(SUM(s.clicks), 0), 0) as acp " +
             "FROM stats s " +
             "LEFT JOIN code_slot cs ON s.code_slot_id = cs.id " +
+            "LEFT JOIN media m ON cs.media_id = m.id " +
             "WHERE 1=1 " +
             "<if test='query.startDate != null'> AND s.date &gt;= #{query.startDate} </if>" +
             "<if test='query.endDate != null'> AND s.date &lt;= #{query.endDate} </if>" +
             "<if test='query.codeSlotId != null'> AND s.code_slot_id = #{query.codeSlotId} </if>" +
             "<if test='query.codeSlotName != null and query.codeSlotName != \"\"'> AND cs.name LIKE CONCAT('%', #{query.codeSlotName}, '%') </if>" +
+            "<if test='query.mediaName != null and query.mediaName != \"\"'> AND m.name LIKE CONCAT('%', #{query.mediaName}, '%') </if>" +
             "<if test='query.terminal != null and query.terminal != \"\" and query.terminal != \"全部\"'> AND cs.terminal = #{query.terminal} </if>" +
             "<if test='query.type != null and query.type != \"\" and query.type != \"全部\"'> AND cs.type = #{query.type} </if>" +
-            "<if test='query.userId != null'> AND s.user_id = #{query.userId} </if>" +
+            "<if test='query.userId != null'> AND cs.user_id = #{query.userId} </if>" +
             "GROUP BY s.date " +
             "ORDER BY s.date ASC" +
             "</script>")
@@ -104,14 +111,16 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "   IFNULL(SUM(s.revenue) / NULLIF(SUM(s.clicks), 0), 0) as acp " +
             "FROM stats s " +
             "LEFT JOIN code_slot cs ON s.code_slot_id = cs.id " +
+            "LEFT JOIN media m ON cs.media_id = m.id " +
             "WHERE 1=1 " +
             "<if test='query.startDate != null'> AND s.date &gt;= #{query.startDate} </if>" +
             "<if test='query.endDate != null'> AND s.date &lt;= #{query.endDate} </if>" +
             "<if test='query.codeSlotId != null'> AND s.code_slot_id = #{query.codeSlotId} </if>" +
             "<if test='query.codeSlotName != null and query.codeSlotName != \"\"'> AND cs.name LIKE CONCAT('%', #{query.codeSlotName}, '%') </if>" +
+            "<if test='query.mediaName != null and query.mediaName != \"\"'> AND m.name LIKE CONCAT('%', #{query.mediaName}, '%') </if>" +
             "<if test='query.terminal != null and query.terminal != \"\" and query.terminal != \"全部\"'> AND cs.terminal = #{query.terminal} </if>" +
             "<if test='query.type != null and query.type != \"\" and query.type != \"全部\"'> AND cs.type = #{query.type} </if>" +
-            "<if test='query.userId != null'> AND s.user_id = #{query.userId} </if>" +
+            "<if test='query.userId != null'> AND cs.user_id = #{query.userId} </if>" +
             "GROUP BY s.date " +
             "ORDER BY s.date DESC" +
             "</script>")
