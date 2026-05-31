@@ -32,6 +32,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blackad.backend.entity.CodeSlot;
 import com.blackad.backend.entity.User;
+import com.blackad.backend.enums.PlatformTypeEnum;
 import com.blackad.backend.service.CodeGenerationService;
 import com.blackad.backend.service.CodeSlotService;
 import com.blackad.backend.service.UserService;
@@ -60,6 +61,7 @@ public class CodeSlotController {
             @RequestParam(required = false) Long mediaId,
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String type,
+            @RequestParam(required = false) String platformType,
             @RequestParam(required = false) String status
     ) {
         QueryWrapper<CodeSlot> queryWrapper = new QueryWrapper<>();
@@ -80,6 +82,9 @@ public class CodeSlotController {
         }
         if (mediaId != null) queryWrapper.eq("media_id", mediaId);
         if (StringUtils.hasText(type) && !"全部".equals(type)) queryWrapper.eq("type", type);
+        if (StringUtils.hasText(platformType) && !"全部".equals(platformType)) {
+            queryWrapper.eq("platform_type", normalizePlatformType(platformType));
+        }
         if (StringUtils.hasText(status) && !"全部".equals(status)) queryWrapper.eq("status", status);
 
         queryWrapper.orderByDesc("created_at");
@@ -111,6 +116,8 @@ public class CodeSlotController {
         if (codeSlot.getRevenueRatio() == null) {
             codeSlot.setRevenueRatio(new java.math.BigDecimal("0.7"));
         }
+        // 代码位未显式选择平台时，继承所属媒体的平台类型，减少管理员重复录入。
+        codeSlot.setPlatformType(resolveCodeSlotPlatformType(codeSlot.getPlatformType(), codeSlot.getMediaId()));
         
         // Save first to get ID
         codeSlotService.save(codeSlot);
@@ -151,6 +158,9 @@ public class CodeSlotController {
         }
         if (codeSlot.getMediaId() != null) {
             existing.setMediaId(codeSlot.getMediaId());
+        }
+        if (codeSlot.getPlatformType() != null) {
+            existing.setPlatformType(resolveCodeSlotPlatformType(codeSlot.getPlatformType(), existing.getMediaId()));
         }
         
         // Regenerate code if critical fields change (though usually dimensions/type shouldn't change)
@@ -236,6 +246,7 @@ public class CodeSlotController {
             @RequestParam(required = false) Long mediaId,
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String type,
+            @RequestParam(required = false) String platformType,
             @RequestParam(required = false) String status
     ) {
         QueryWrapper<CodeSlot> query = new QueryWrapper<>();
@@ -256,6 +267,9 @@ public class CodeSlotController {
         }
         if (mediaId != null) query.eq("media_id", mediaId);
         if (StringUtils.hasText(type) && !"全部".equals(type)) query.eq("type", type);
+        if (StringUtils.hasText(platformType) && !"全部".equals(platformType)) {
+            query.eq("platform_type", normalizePlatformType(platformType));
+        }
         if (StringUtils.hasText(status) && !"全部".equals(status)) query.eq("status", status);
 
         query.orderByDesc("created_at");
@@ -264,13 +278,14 @@ public class CodeSlotController {
         List<CodeSlot> list = codeSlotService.list(query);
         
         StringBuilder csv = new StringBuilder("\uFEFF"); // BOM for Excel UTF-8 compatibility
-        csv.append("代码位名称,代码位ID,所属媒体,终端,形式,分成系数,状态\n");
+        csv.append("代码位名称,代码位ID,所属媒体,平台类型,终端,形式,分成系数,状态\n");
         
         for (CodeSlot slot : list) {
             com.blackad.backend.entity.Media media = mediaService.getById(slot.getMediaId());
             csv.append(CsvUtils.escape(slot.getName())).append(",")
                .append(CsvUtils.escape(slot.getCodeSlotId())).append(",")
                .append(media != null ? CsvUtils.escape(media.getName()) : "未知").append(",")
+               .append(CsvUtils.escape(slot.getPlatformType())).append(",")
                .append(CsvUtils.escape(slot.getTerminal())).append(",")
                .append(CsvUtils.escape(slot.getType())).append(",")
                .append(slot.getRevenueRatio() != null ? slot.getRevenueRatio() : "0.70").append(",")
@@ -320,6 +335,7 @@ public class CodeSlotController {
                 slot.setName(name);
                 slot.setMediaId(row.get("mediaId") != null ? Long.valueOf(row.get("mediaId")) : null);
                 slot.setType(row.get("type"));
+                slot.setPlatformType(resolveCodeSlotPlatformType(parsePlatformType(row), slot.getMediaId()));
                 slot.setTerminal(row.get("terminal") != null ? row.get("terminal") : "H5");
                 slot.setDisplayType(row.get("displayType") != null ? row.get("displayType") : "固定块");
                 slot.setAdType(row.get("adType") != null ? row.get("adType") : "信息流");
@@ -352,5 +368,42 @@ public class CodeSlotController {
             msg += " 失败（或重复） " + failCount + " 条。";
         }
         return ResponseEntity.ok(msg);
+    }
+
+    private String parsePlatformType(Map<String, String> row) {
+        return normalizePlatformType(getCsvValue(row, "platformType", "platform_type", "平台类型"));
+    }
+
+    private String getCsvValue(Map<String, String> row, String... keys) {
+        for (String key : keys) {
+            String value = row.get(key);
+            if (StringUtils.hasText(value)) {
+                return value.trim();
+            }
+        }
+        return null;
+    }
+
+    private String resolveCodeSlotPlatformType(String platformType, Long mediaId) {
+        String normalized = normalizePlatformType(platformType);
+        if (StringUtils.hasText(normalized)) {
+            return normalized;
+        }
+        if (mediaId == null) {
+            return null;
+        }
+        com.blackad.backend.entity.Media media = mediaService.getById(mediaId);
+        return media != null ? normalizePlatformType(media.getPlatformType()) : null;
+    }
+
+    private String normalizePlatformType(String platformType) {
+        if (!StringUtils.hasText(platformType) || "全部".equals(platformType)) {
+            return null;
+        }
+        String normalized = platformType.trim();
+        if (!PlatformTypeEnum.isValid(normalized)) {
+            throw new RuntimeException("非法平台类型: " + normalized);
+        }
+        return normalized;
     }
 }

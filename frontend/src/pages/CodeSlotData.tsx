@@ -8,11 +8,13 @@ import Select from '../components/Select';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import ImportStatsModal from '../components/ImportStatsModal';
+import { getPlatformTypeLabel, PLATFORM_TYPE_FILTER_OPTIONS } from '../constants/platformTypes';
 
 interface CodeSlotStats {
   codeSlotId: number;
   codeSlotName: string;
   mediaName?: string;
+  platformType?: string;
   impressions: number;
   clicks: number;
   revenue: number; // 分成前收入
@@ -46,7 +48,8 @@ export default function CodeSlotData() {
     codeSlotId: '',
     codeSlotName: '',
     terminal: '全部',
-    type: '全部'
+    type: '全部',
+    platformType: '全部'
   });
 
   // Data
@@ -73,6 +76,7 @@ export default function CodeSlotData() {
       // Clean params
       if (params.terminal === '全部') delete params.terminal;
       if (params.type === '全部') delete params.type;
+      if (params.platformType === '全部') delete params.platformType;
 
       const listRes = await api.get('/stats/codeslots', { params });
       const records = listRes.data.records || [];
@@ -81,6 +85,7 @@ export default function CodeSlotData() {
         // Map snake_case to camelCase for the table display
         codeSlotId: item.code_slot_id || item.codeSlotId,
         codeSlotName: item.code_slot_name || item.codeSlotName,
+        platformType: item.platform_type || item.platformType,
         afterSharingRevenue: item.after_sharing_revenue || (item.revenue * (item.ratio || 1.0))
       }));
       setListData(calculatedData);
@@ -110,6 +115,7 @@ export default function CodeSlotData() {
       };
       if (params.terminal === '全部') delete params.terminal;
       if (params.type === '全部') delete params.type;
+      if (params.platformType === '全部') delete params.platformType;
 
       const res = await api.get('/stats/export', {
         params,
@@ -252,7 +258,7 @@ export default function CodeSlotData() {
               </div>
             </div>
 
-            <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 lg:gap-4 items-end">
+            <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 lg:gap-4 items-end">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
                   <Layout className="w-3 h-3" /> 所属媒体
@@ -321,6 +327,17 @@ export default function CodeSlotData() {
                   size="sm"
                 />
               </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
+                  <Filter className="w-3 h-3" /> 平台类型
+                </label>
+                <Select
+                  value={filters.platformType}
+                  onChange={(val) => setFilters({ ...filters, platformType: val as string })}
+                  options={PLATFORM_TYPE_FILTER_OPTIONS}
+                  size="sm"
+                />
+              </div>
               <div className="flex gap-2">
                 <button
                   type="submit"
@@ -337,11 +354,12 @@ export default function CodeSlotData() {
       {/* Table Area */}
       <div className="flex-1 min-h-0 bg-card border border-border rounded-2xl flex flex-col backdrop-blur-md overflow-hidden">
         <div className="flex-1 overflow-auto min-h-0 rounded-t-2xl custom-scrollbar">
-          <table className="w-full text-left border-collapse min-w-[1000px]">
+          <table className="w-full text-left border-collapse min-w-[1100px]">
             <thead className="bg-black/5 dark:bg-white/5 backdrop-blur-md sticky top-0 z-20">
               <tr>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">代码位名称</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">所属媒体</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border">平台类型</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border text-right">展现量</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border text-right">点击量</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border text-right">点击率</th>
@@ -368,6 +386,7 @@ export default function CodeSlotData() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted font-medium">{row.mediaName || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted font-medium">{getPlatformTypeLabel(row.platformType)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted text-right">{(row.impressions || 0).toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted text-right">{(row.clicks || 0).toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted text-right">{((row.ctr || 0) * 100).toFixed(2)}%</td>

@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,6 +42,7 @@ import com.blackad.backend.dto.StatsQueryDTO;
 import com.blackad.backend.dto.StatsTrendDTO;
 import com.blackad.backend.entity.Stats;
 import com.blackad.backend.entity.User;
+import com.blackad.backend.enums.PlatformTypeEnum;
 import com.blackad.backend.service.OcrMappingHistoryService;
 import com.blackad.backend.service.OcrService;
 import com.blackad.backend.service.StatsService;
@@ -72,7 +74,7 @@ public class StatsController {
     // Helper to inject user context into DTO
     private StatsQueryDTO buildQueryDTO(UserDetails userDetails, LocalDate startDate, LocalDate endDate,
                                       Long codeSlotId, String codeSlotName, String mediaName, String terminal, String type,
-                                      Integer page, Integer size) {
+                                      String platformType, Integer page, Integer size) {
         StatsQueryDTO dto = new StatsQueryDTO();
         dto.setStartDate(startDate);
         dto.setEndDate(endDate);
@@ -81,6 +83,7 @@ public class StatsController {
         dto.setMediaName(mediaName);
         dto.setTerminal(terminal);
         dto.setType(type);
+        dto.setPlatformType(normalizePlatformType(platformType));
         if (page != null) dto.setPage(page);
         if (size != null) dto.setSize(size);
         
@@ -108,9 +111,10 @@ public class StatsController {
                                                   @RequestParam(required = false) String mediaName,
                                                   @RequestParam(required = false) String terminal,
                                                   @RequestParam(required = false) String type,
+                                                  @RequestParam(required = false) String platformType,
                                                   @RequestParam(defaultValue = "1") int page,
                                                   @RequestParam(defaultValue = "10") int size) {
-        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, page, size);
+        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, platformType, page, size);
         return statsService.getCodeSlotStats(dto);
     }
 
@@ -122,18 +126,20 @@ public class StatsController {
                                               @RequestParam(required = false) String codeSlotName,
                                               @RequestParam(required = false) String mediaName,
                                               @RequestParam(required = false) String terminal,
-                                              @RequestParam(required = false) String type) {
+                                              @RequestParam(required = false) String type,
+                                              @RequestParam(required = false) String platformType) {
         // Limit to 300 records as requested
-        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, 1, 300);
+        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, platformType, 1, 300);
         List<StatsCodeSlotDTO> list = statsService.getCodeSlotStats(dto).getRecords();
         
         StringBuilder csv = new StringBuilder("\uFEFF"); // BOM for Excel UTF-8 compatibility
-        csv.append("代码位名称,代码位ID,所属媒体,展现量,点击量,点击率,eCPM,ACP,分成前收入,系数,分成后收入\n");
+        csv.append("代码位名称,代码位ID,所属媒体,平台类型,展现量,点击量,点击率,eCPM,ACP,分成前收入,系数,分成后收入\n");
         
         for (StatsCodeSlotDTO row : list) {
             csv.append(CsvUtils.escape(row.getCodeSlotName())).append(",")
                .append(row.getCodeSlotId()).append(",")
                .append(CsvUtils.escape(row.getMediaName())).append(",")
+               .append(CsvUtils.escape(row.getPlatformType())).append(",")
                .append(row.getImpressions() != null ? row.getImpressions() : 0).append(",")
                .append(row.getClicks() != null ? row.getClicks() : 0).append(",")
                .append(String.format("%.2f%%", (row.getCtr() != null ? row.getCtr() * 100 : 0.0))).append(",")
@@ -160,8 +166,9 @@ public class StatsController {
                                   @RequestParam(required = false) String codeSlotName,
                                   @RequestParam(required = false) String mediaName,
                                   @RequestParam(required = false) String terminal,
-                                  @RequestParam(required = false) String type) {
-        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, null, null);
+                                  @RequestParam(required = false) String type,
+                                  @RequestParam(required = false) String platformType) {
+        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, platformType, null, null);
         return statsService.getSummary(dto);
     }
 
@@ -173,8 +180,9 @@ public class StatsController {
                                       @RequestParam(required = false) String codeSlotName,
                                       @RequestParam(required = false) String mediaName,
                                       @RequestParam(required = false) String terminal,
-                                      @RequestParam(required = false) String type) {
-        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, null, null);
+                                      @RequestParam(required = false) String type,
+                                      @RequestParam(required = false) String platformType) {
+        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, platformType, null, null);
         return statsService.getTrend(dto);
     }
 
@@ -187,9 +195,10 @@ public class StatsController {
                                       @RequestParam(required = false) String mediaName,
                                       @RequestParam(required = false) String terminal,
                                       @RequestParam(required = false) String type,
+                                      @RequestParam(required = false) String platformType,
                                       @RequestParam(defaultValue = "1") int page,
                                       @RequestParam(defaultValue = "10") int size) {
-        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, page, size);
+        StatsQueryDTO dto = buildQueryDTO(userDetails, startDate, endDate, codeSlotId, codeSlotName, mediaName, terminal, type, platformType, page, size);
         return statsService.getList(dto);
     }
 
@@ -273,6 +282,7 @@ public class StatsController {
                     // Third-party format mapping
                     String slotNameStr = row.get("代码位");
                     String codeSlotIdStr = row.get("代码位ID");
+                    String rowPlatformType = parsePlatformType(row);
                     
                     if (slotNameStr == null || slotNameStr.isEmpty()) {
                         throw new IllegalArgumentException("缺少代码位名称");
@@ -309,6 +319,7 @@ public class StatsController {
                             media.setCategory("Other");
                             media.setDailyVisits("1w以下");
                             media.setStatsAuthType("none");
+                            media.setPlatformType(rowPlatformType);
                             media.setUserId(user.getId());
                             media.setStatus("APPROVED");
                             media.setCreatedAt(LocalDateTime.now());
@@ -322,6 +333,7 @@ public class StatsController {
                         slot.setCodeSlotId(codeSlotIdStr != null && !codeSlotIdStr.isEmpty() ? codeSlotIdStr : slotNameStr);
                         slot.setMediaId(media.getId());
                         slot.setUserId(media.getUserId());
+                        slot.setPlatformType(resolvePlatformType(rowPlatformType, media));
                         slot.setTerminal("H5");
                         slot.setType("Banner"); // Set default type to avoid SQL error
                         slot.setDisplayType("Banner");
@@ -560,6 +572,7 @@ public class StatsController {
             String slotName = (String) row.get("code_slot_name");
             String originalText = (String) row.get("original_text");
             String mediaName = (String) row.get("media_name");
+            String rowPlatformType = parsePlatformType(row);
             Long rowUserId = row.get("user_id") != null ? Long.valueOf(row.get("user_id").toString()) : selectedUserId;
 
             if (mediaName == null || mediaName.isEmpty()) mediaName = "Image";
@@ -574,6 +587,7 @@ public class StatsController {
                 media.setName(mediaName);
                 media.setDomain(mediaName.toLowerCase() + ".com");
                 media.setType("Website"); // 设置默认类型，防止数据库报错
+                media.setPlatformType(rowPlatformType);
                 media.setUserId(rowUserId);
                 media.setStatus("APPROVED");
                 media.setCreatedAt(LocalDateTime.now());
@@ -588,6 +602,7 @@ public class StatsController {
                 slot.setCodeSlotId(slotName); // 默认逻辑 ID 同名称
                 slot.setMediaId(media.getId());
                 slot.setUserId(rowUserId);
+                slot.setPlatformType(resolvePlatformType(rowPlatformType, media));
                 slot.setType("Banner"); // 设置默认类型
                 slot.setTerminal("H5");
                 slot.setStatus("ACTIVE");
@@ -641,6 +656,39 @@ public class StatsController {
         }
         response.put("message", msg);
         return ResponseEntity.ok(response);
+    }
+
+    private String parsePlatformType(Map<?, ?> row) {
+        return normalizePlatformType(getMapValue(row, "platformType", "platform_type", "平台类型"));
+    }
+
+    private String getMapValue(Map<?, ?> row, String... keys) {
+        for (String key : keys) {
+            Object value = row.get(key);
+            if (value != null && StringUtils.hasText(value.toString())) {
+                return value.toString().trim();
+            }
+        }
+        return null;
+    }
+
+    private String resolvePlatformType(String platformType, com.blackad.backend.entity.Media media) {
+        String normalized = normalizePlatformType(platformType);
+        if (StringUtils.hasText(normalized)) {
+            return normalized;
+        }
+        return media != null ? normalizePlatformType(media.getPlatformType()) : null;
+    }
+
+    private String normalizePlatformType(String platformType) {
+        if (!StringUtils.hasText(platformType) || "全部".equals(platformType)) {
+            return null;
+        }
+        String normalized = platformType.trim();
+        if (!PlatformTypeEnum.isValid(normalized)) {
+            throw new RuntimeException("非法平台类型: " + normalized);
+        }
+        return normalized;
     }
 
     @DeleteMapping("/batch")

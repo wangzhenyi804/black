@@ -7,6 +7,7 @@ import Pagination from '../components/Pagination';
 import Select from '../components/Select';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { getPlatformTypeLabel, PLATFORM_TYPE_FILTER_OPTIONS, PLATFORM_TYPE_OPTIONS } from '../constants/platformTypes';
 
 interface CodeSlot {
   id: number;
@@ -15,6 +16,7 @@ interface CodeSlot {
   user_id?: number; // Added user_id
   name: string;
   type: string;
+  platform_type?: string;
   terminal: string;
   display_type: string;
   ad_type: string;
@@ -44,6 +46,7 @@ interface FilterState {
   media_id: string;
   user_id: string;
   type: string;
+  platform_type: string;
   status: string;
 }
 
@@ -51,6 +54,7 @@ const initialFormData: Partial<CodeSlot> = {
   name: '',
   media_id: undefined,
   type: '',
+  platform_type: '',
   terminal: 'H5',
   display_type: '固定块',
   ad_type: '信息流',
@@ -71,7 +75,7 @@ export default function CodeSlots() {
   const [mediaList, setMediaList] = useState<Media[]>([]);
   const [userList, setUserList] = useState<{id: number, username: string, is_active: number}[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState<FilterState>({ name: '', media_id: '', user_id: '', type: '全部', status: '全部' });
+  const [filters, setFilters] = useState<FilterState>({ name: '', media_id: '', user_id: '', type: '全部', platform_type: '全部', status: '全部' });
   const [pagination, setPagination] = useState({ current: 1, size: 10, total: 0 });
   
   // Modal states
@@ -134,6 +138,7 @@ export default function CodeSlots() {
       mediaId: filters.media_id || undefined,
       userId: filters.user_id || undefined,
       type: filters.type === '全部' ? undefined : filters.type,
+      platformType: filters.platform_type === '全部' ? undefined : filters.platform_type,
       status: filters.status === '全部' ? undefined : filters.status
     };
 
@@ -160,6 +165,7 @@ export default function CodeSlots() {
         mediaId: filters.media_id || undefined,
         userId: filters.user_id || undefined,
         type: filters.type === '全部' ? undefined : filters.type,
+        platformType: filters.platform_type === '全部' ? undefined : filters.platform_type,
         status: filters.status === '全部' ? undefined : filters.status
       };
       const res = await api.get('/codeslots/export', {
@@ -229,6 +235,7 @@ export default function CodeSlots() {
       name: slot.name,
       media_id: slot.media_id,
       user_id: slot.user_id,
+      platform_type: slot.platform_type || '',
       terminal: slot.terminal,
       display_type: slot.display_type,
       ad_type: slot.ad_type,
@@ -387,7 +394,7 @@ export default function CodeSlots() {
           "transition-all duration-300 ease-in-out lg:block lg:opacity-100",
           isFilterOpen ? "opacity-100 max-h-[500px] mt-4 overflow-visible" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden lg:overflow-visible"
         )}>
-          <form onSubmit={handleSearch} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 items-end">
+          <form onSubmit={handleSearch} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6 items-end">
             <div className="relative group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted group-focus-within:text-primary transition-colors" />
               <input
@@ -441,6 +448,16 @@ export default function CodeSlots() {
                 size="sm"
               />
             </div>
+            <div className="w-full sm:w-auto">
+              <Select
+                value={filters.platform_type}
+                onChange={(val) => setFilters({ ...filters, platform_type: String(val) })}
+                options={PLATFORM_TYPE_FILTER_OPTIONS}
+                placeholder="全部平台"
+                className="bg-black/5 dark:bg-white/5"
+                size="sm"
+              />
+            </div>
             <button
               type="submit"
               className="bg-primary text-white px-6 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
@@ -453,8 +470,8 @@ export default function CodeSlots() {
 
       {/* Table Area */}
       <div className="flex-1 min-h-0 bg-card rounded-2xl lg:rounded-3xl border border-border overflow-hidden flex flex-col backdrop-blur-md">
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse">
+        <div className="flex-1 overflow-auto custom-scrollbar">
+          <table className="w-full min-w-[1050px] text-left border-collapse">
             <thead className="sticky top-0 bg-black/5 dark:bg-white/5 backdrop-blur-md z-10 border-b border-border">
               <tr>
                 {isBatchMode && (
@@ -469,6 +486,7 @@ export default function CodeSlots() {
                 )}
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">代码位名称</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">所属媒体</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">平台类型</th>
                 {isAdmin && <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">归属用户</th>}
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">终端 / 形式</th>
                 {isAdmin && <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">分成系数</th>}
@@ -478,9 +496,9 @@ export default function CodeSlots() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr><td colSpan={5 + (isAdmin ? 2 : 0) + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
+                <tr><td colSpan={6 + (isAdmin ? 2 : 0) + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
               ) : slots.length === 0 ? (
-                <tr><td colSpan={5 + (isAdmin ? 2 : 0) + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
+                <tr><td colSpan={6 + (isAdmin ? 2 : 0) + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
               ) : slots.map((slot) => {
                 const media = mediaList.find(m => m.id === slot.media_id);
                 const user = userList.find(u => u.id === slot.user_id);
@@ -508,6 +526,7 @@ export default function CodeSlots() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-text-muted font-medium">{media ? media.name : '未知'}</td>
+                    <td className="px-6 py-4 text-sm text-text-muted font-medium">{getPlatformTypeLabel(slot.platform_type)}</td>
                     {isAdmin && (
                       <td className="px-6 py-4">
                         <span className="text-sm text-text-muted font-medium">{user ? user.username : '-'}</span>
@@ -633,6 +652,22 @@ export default function CodeSlots() {
                     ]}
                     placeholder="选择媒体"
                     required
+                    className="bg-black/5 dark:bg-white/5"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-2">
+                    平台类型
+                  </label>
+                  <Select
+                    value={formData.platform_type || ''}
+                    onChange={(val) => setFormData({ ...formData, platform_type: String(val) })}
+                    options={[
+                      { value: '', label: '继承所属媒体' },
+                      ...PLATFORM_TYPE_OPTIONS
+                    ]}
+                    placeholder="请选择平台"
                     className="bg-black/5 dark:bg-white/5"
                   />
                 </div>

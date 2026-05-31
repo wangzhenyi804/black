@@ -7,6 +7,7 @@ import Select from '../components/Select';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { getPlatformTypeLabel, PLATFORM_TYPE_FILTER_OPTIONS, PLATFORM_TYPE_OPTIONS } from '../constants/platformTypes';
 
 interface Media {
   id: number;
@@ -14,6 +15,7 @@ interface Media {
   domain: string;
   category: string;
   type: string;
+  platform_type?: string;
   status: string;
   icp_code?: string;
   rejection_reason?: string;
@@ -40,6 +42,7 @@ const initialFormData: Partial<Media> = {
   domain: '',
   category: '',
   type: 'Website',
+  platform_type: '',
   icp_code: '',
   note: '',
   description: '',
@@ -60,6 +63,7 @@ export default function Media() {
   const [filters, setFilters] = useState({
     name: '',
     category: '全部',
+    platform_type: '全部',
     status: '全部'
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -88,6 +92,7 @@ export default function Media() {
           size,
           name: filters.name,
           category: filters.category,
+          platformType: filters.platform_type,
           status: filters.status
         }
       });
@@ -116,6 +121,7 @@ export default function Media() {
         params: {
           name: filters.name,
           category: filters.category,
+          platformType: filters.platform_type,
           status: filters.status
         },
         responseType: 'blob'
@@ -197,6 +203,7 @@ export default function Media() {
       domain: media.domain,
       category: media.category,
       type: media.type,
+      platform_type: media.platform_type || '',
       status: media.status,
       icp_code: media.icp_code,
       note: media.note,
@@ -374,6 +381,16 @@ export default function Media() {
                   size="sm"
                 />
               </div>
+              <div className="w-full sm:w-auto min-w-[120px] lg:min-w-[140px]">
+                <Select
+                  value={filters.platform_type}
+                  onChange={(val) => setFilters({ ...filters, platform_type: String(val) })}
+                  options={PLATFORM_TYPE_FILTER_OPTIONS}
+                  placeholder="全部平台"
+                  className="bg-black/5 dark:bg-white/5"
+                  size="sm"
+                />
+              </div>
               <button
                 type="submit"
                 className="bg-black/5 dark:bg-white/5 text-text px-6 py-2 rounded-xl text-xs lg:text-sm font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-all border border-border"
@@ -407,7 +424,7 @@ export default function Media() {
       {/* Table Container */}
       <div className="flex-1 min-h-0 bg-card rounded-2xl lg:rounded-3xl border border-border flex flex-col backdrop-blur-md overflow-hidden">
         <div className="flex-1 overflow-auto min-h-0 rounded-t-2xl lg:rounded-t-3xl custom-scrollbar">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <table className="w-full text-left border-collapse min-w-[900px]">
             <thead className="sticky top-0 bg-black/5 dark:bg-white/5 backdrop-blur-md z-10 border-b border-border">
               <tr>
                 {isBatchMode && (
@@ -423,6 +440,7 @@ export default function Media() {
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">媒体名称</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">域名</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">分类</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">平台类型</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">状态</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider">创建时间</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-text-muted uppercase tracking-wider text-right">操作</th>
@@ -430,9 +448,9 @@ export default function Media() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr><td colSpan={6 + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
+                <tr><td colSpan={7 + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div></td></tr>
               ) : mediaList.length === 0 ? (
-                <tr><td colSpan={6 + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
+                <tr><td colSpan={7 + (isBatchMode ? 1 : 0)} className="px-6 py-20 text-center text-text-muted font-medium">暂无数据</td></tr>
               ) : (
                 mediaList.map((media) => (
                   <tr key={media.id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group">
@@ -456,6 +474,7 @@ export default function Media() {
                     </td>
                     <td className="px-6 py-4 text-sm text-text-muted font-medium">{media.domain}</td>
                     <td className="px-6 py-4 text-sm text-text-muted font-medium">{media.category}</td>
+                    <td className="px-6 py-4 text-sm text-text-muted font-medium">{getPlatformTypeLabel(media.platform_type)}</td>
                     <td className="px-6 py-4">
                       {(() => {
                         const config = getStatusConfig(media.status);
@@ -586,6 +605,21 @@ export default function Media() {
                       options={CATEGORIES.filter(c => c !== '全部').map(c => ({ value: c, label: c }))}
                       placeholder="请选择"
                       required
+                      className="bg-black/5 dark:bg-white/5"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-2">
+                      平台类型
+                    </label>
+                    <Select
+                      value={formData.platform_type || ''}
+                      onChange={(val) => setFormData({ ...formData, platform_type: String(val) })}
+                      options={[
+                        { value: '', label: '暂不设置' },
+                        ...PLATFORM_TYPE_OPTIONS
+                      ]}
+                      placeholder="请选择平台"
                       className="bg-black/5 dark:bg-white/5"
                     />
                   </div>

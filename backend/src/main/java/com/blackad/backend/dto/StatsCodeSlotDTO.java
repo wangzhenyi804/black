@@ -12,6 +12,8 @@ public class StatsCodeSlotDTO {
     private String codeSlotName;
     @com.fasterxml.jackson.annotation.JsonProperty("mediaName")
     private String mediaName;
+    @com.fasterxml.jackson.annotation.JsonProperty("platformType")
+    private String platformType;
     private Long impressions;
     private Long clicks;
     private BigDecimal revenue; // 分成前收入 (对应表格中的收入)

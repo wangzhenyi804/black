@@ -21,6 +21,7 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "   MAX(s.code_slot_id) as codeSlotId, " +
             "   cs.name as codeSlotName, " +
             "   MAX(m.name) as mediaName, " +
+            "   MAX(COALESCE(cs.platform_type, m.platform_type)) as platformType, " +
             "   SUM(s.impressions) as impressions, " +
             "   SUM(s.clicks) as clicks, " +
             "   SUM(s.revenue) as revenue, " +
@@ -40,6 +41,7 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "<if test='query.mediaName != null and query.mediaName != \"\"'> AND m.name LIKE CONCAT('%', #{query.mediaName}, '%') </if>" +
             "<if test='query.terminal != null and query.terminal != \"\" and query.terminal != \"全部\"'> AND cs.terminal = #{query.terminal} </if>" +
             "<if test='query.type != null and query.type != \"\" and query.type != \"全部\"'> AND cs.type = #{query.type} </if>" +
+            "<if test='query.platformType != null and query.platformType != \"\" and query.platformType != \"全部\"'> AND COALESCE(cs.platform_type, m.platform_type) = #{query.platformType} </if>" +
             "<if test='query.userId != null'> AND cs.user_id = #{query.userId} </if>" +
             "GROUP BY cs.name " +
             "ORDER BY CAST(codeSlotId AS CHAR) ASC" +
@@ -68,6 +70,7 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "<if test='query.mediaName != null and query.mediaName != \"\"'> AND m.name LIKE CONCAT('%', #{query.mediaName}, '%') </if>" +
             "<if test='query.terminal != null and query.terminal != \"\" and query.terminal != \"全部\"'> AND cs.terminal = #{query.terminal} </if>" +
             "<if test='query.type != null and query.type != \"\" and query.type != \"全部\"'> AND cs.type = #{query.type} </if>" +
+            "<if test='query.platformType != null and query.platformType != \"\" and query.platformType != \"全部\"'> AND COALESCE(cs.platform_type, m.platform_type) = #{query.platformType} </if>" +
             "<if test='query.userId != null'> AND cs.user_id = #{query.userId} </if>" +
             "</script>")
     StatsTrendDTO selectSummary(@Param("query") StatsQueryDTO query);
@@ -93,6 +96,7 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "<if test='query.mediaName != null and query.mediaName != \"\"'> AND m.name LIKE CONCAT('%', #{query.mediaName}, '%') </if>" +
             "<if test='query.terminal != null and query.terminal != \"\" and query.terminal != \"全部\"'> AND cs.terminal = #{query.terminal} </if>" +
             "<if test='query.type != null and query.type != \"\" and query.type != \"全部\"'> AND cs.type = #{query.type} </if>" +
+            "<if test='query.platformType != null and query.platformType != \"\" and query.platformType != \"全部\"'> AND COALESCE(cs.platform_type, m.platform_type) = #{query.platformType} </if>" +
             "<if test='query.userId != null'> AND cs.user_id = #{query.userId} </if>" +
             "GROUP BY s.date " +
             "ORDER BY s.date ASC" +
@@ -120,6 +124,7 @@ public interface StatsMapper extends BaseMapper<Stats> {
             "<if test='query.mediaName != null and query.mediaName != \"\"'> AND m.name LIKE CONCAT('%', #{query.mediaName}, '%') </if>" +
             "<if test='query.terminal != null and query.terminal != \"\" and query.terminal != \"全部\"'> AND cs.terminal = #{query.terminal} </if>" +
             "<if test='query.type != null and query.type != \"\" and query.type != \"全部\"'> AND cs.type = #{query.type} </if>" +
+            "<if test='query.platformType != null and query.platformType != \"\" and query.platformType != \"全部\"'> AND COALESCE(cs.platform_type, m.platform_type) = #{query.platformType} </if>" +
             "<if test='query.userId != null'> AND cs.user_id = #{query.userId} </if>" +
             "GROUP BY s.date " +
             "ORDER BY s.date DESC" +

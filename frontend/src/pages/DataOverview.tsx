@@ -13,6 +13,7 @@ import {
 import api from '../api/client';
 import Pagination from '../components/Pagination';
 import Select from '../components/Select';
+import { PLATFORM_TYPE_FILTER_OPTIONS } from '../constants/platformTypes';
 
 interface StatsTrend {
   date: string;
@@ -68,7 +69,8 @@ export default function DataOverview() {
     codeSlotId: '',
     codeSlotName: '',
     terminal: '全部',
-    type: '全部'
+    type: '全部',
+    platformType: '全部'
   });
 
   // Data
@@ -99,6 +101,7 @@ export default function DataOverview() {
       // Clean params
       if (params.terminal === '全部') delete params.terminal;
       if (params.type === '全部') delete params.type;
+      if (params.platformType === '全部') delete params.platformType;
 
       const [summaryRes, trendRes, listRes] = await Promise.all([
         api.get('/stats/summary', { params }),
@@ -234,7 +237,7 @@ export default function DataOverview() {
         </div>
 
         {/* Advanced Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
               <Zap className="w-3 h-3" /> 代码位ID
@@ -288,6 +291,17 @@ export default function DataOverview() {
                 { value: 'Interstitial', label: '插屏' },
                 { value: 'Native', label: '原生' }
               ]}
+              size="sm"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
+              <Filter className="w-3 h-3" /> 平台类型
+            </label>
+            <Select
+              value={filters.platformType}
+              onChange={(val) => setFilters({ ...filters, platformType: val as string })}
+              options={PLATFORM_TYPE_FILTER_OPTIONS}
               size="sm"
             />
           </div>

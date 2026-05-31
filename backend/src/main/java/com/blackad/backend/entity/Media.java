@@ -16,6 +16,7 @@ public class Media implements Serializable {
     private Long userId;
     private String name;
     private String type; // "Banner", "Video", etc.
+    private String platformType; // 平台类型: 360/baidu/google/sm
     private String description;
     private LocalDateTime createdAt;
     

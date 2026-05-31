@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blackad.backend.entity.Media;
 import com.blackad.backend.entity.User;
+import com.blackad.backend.enums.PlatformTypeEnum;
 import com.blackad.backend.service.MediaService;
 import com.blackad.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,7 @@ public class MediaController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) String platformType,
             @RequestParam(required = false) String status
     ) {
         QueryWrapper<Media> queryWrapper = new QueryWrapper<>();
@@ -67,6 +69,9 @@ public class MediaController {
             });
         }
         if (StringUtils.hasText(category) && !"全部".equals(category)) queryWrapper.eq("category", category);
+        if (StringUtils.hasText(platformType) && !"全部".equals(platformType)) {
+            queryWrapper.eq("platform_type", normalizePlatformType(platformType));
+        }
         if (StringUtils.hasText(status) && !"全部".equals(status)) queryWrapper.eq("status", status);
 
         return mediaService.page(new Page<>(page, size), queryWrapper);
@@ -81,6 +86,7 @@ public class MediaController {
         }
         media.setUserId(user.getId());
         media.setCreatedAt(LocalDateTime.now());
+        media.setPlatformType(normalizePlatformType(media.getPlatformType()));
         if (!StringUtils.hasText(media.getStatus())) {
             media.setStatus("待初审");
         }
@@ -104,6 +110,7 @@ public class MediaController {
         
         media.setId(id);
         media.setUserId(existing.getUserId()); // Preserve owner
+        media.setPlatformType(normalizePlatformType(media.getPlatformType()));
         mediaService.updateById(media);
         return media;
     }
@@ -159,6 +166,7 @@ public class MediaController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) String platformType,
             @RequestParam(required = false) String status
     ) {
         QueryWrapper<Media> queryWrapper = new QueryWrapper<>();
@@ -180,6 +188,9 @@ public class MediaController {
             });
         }
         if (StringUtils.hasText(category) && !"全部".equals(category)) queryWrapper.eq("category", category);
+        if (StringUtils.hasText(platformType) && !"全部".equals(platformType)) {
+            queryWrapper.eq("platform_type", normalizePlatformType(platformType));
+        }
         if (StringUtils.hasText(status) && !"全部".equals(status)) queryWrapper.eq("status", status);
         
         queryWrapper.orderByDesc("created_at");
@@ -188,13 +199,14 @@ public class MediaController {
         List<Media> list = mediaService.list(queryWrapper);
         
         StringBuilder csv = new StringBuilder("\uFEFF"); // BOM for Excel UTF-8 compatibility
-        csv.append("媒体名称,媒体ID,域名,分类,状态\n");
+        csv.append("媒体名称,媒体ID,域名,分类,平台类型,状态\n");
         
         for (Media media : list) {
             csv.append(CsvUtils.escape(media.getName())).append(",")
                .append(media.getId()).append(",")
                .append(CsvUtils.escape(media.getDomain())).append(",")
                .append(CsvUtils.escape(media.getCategory())).append(",")
+               .append(CsvUtils.escape(media.getPlatformType())).append(",")
                .append(CsvUtils.escape(media.getStatus()))
                .append("\n");
         }
@@ -223,6 +235,7 @@ public class MediaController {
             media.setDomain(row.get("domain"));
             media.setCategory(row.get("category"));
             media.setType(row.get("type") != null ? row.get("type") : "Website");
+            media.setPlatformType(parsePlatformType(row));
             media.setStatus(row.get("status") != null ? row.get("status") : "待初审");
             media.setIcpCode(row.get("icpCode"));
             media.setNote(row.get("note"));
@@ -236,5 +249,30 @@ public class MediaController {
 
         mediaService.saveBatch(mediaList);
         return ResponseEntity.ok("成功导入 " + mediaList.size() + " 条媒体信息");
+    }
+
+    private String parsePlatformType(Map<String, String> row) {
+        return normalizePlatformType(getCsvValue(row, "platformType", "platform_type", "平台类型"));
+    }
+
+    private String getCsvValue(Map<String, String> row, String... keys) {
+        for (String key : keys) {
+            String value = row.get(key);
+            if (StringUtils.hasText(value)) {
+                return value.trim();
+            }
+        }
+        return null;
+    }
+
+    private String normalizePlatformType(String platformType) {
+        if (!StringUtils.hasText(platformType) || "全部".equals(platformType)) {
+            return null;
+        }
+        String normalized = platformType.trim();
+        if (!PlatformTypeEnum.isValid(normalized)) {
+            throw new RuntimeException("非法平台类型: " + normalized);
+        }
+        return normalized;
     }
 }

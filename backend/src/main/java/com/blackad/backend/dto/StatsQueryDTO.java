@@ -12,6 +12,7 @@ public class StatsQueryDTO {
     private String mediaName;
     private String terminal;
     private String type;
+    private String platformType;
     
     // Security field
     private Long userId;
