@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { endOfMonth, format, startOfMonth, startOfQuarter, subDays, subMonths } from 'date-fns';
-import { Activity, DollarSign, Eye, Filter, Layout, MousePointer2, Search, Settings, Target, Terminal, TrendingUp, X, Zap } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Activity, ChevronRight, DollarSign, Eye, Filter, Layout, MousePointer2, Search, Settings, Target, Terminal, TrendingUp, X, Zap } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
 import {
   Area,
   AreaChart,
@@ -79,6 +79,7 @@ export default function DataOverview() {
   const [listData, setListData] = useState<StatsTrend[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ current: 1, size: 10, total: 0 });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Chart Config
   const [chartMetrics, setChartMetrics] = useState<string[]>(['impressions', 'revenue']);
@@ -139,9 +140,13 @@ export default function DataOverview() {
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = (e?: FormEvent) => {
+    e?.preventDefault();
     setPagination(prev => ({ ...prev, current: 1 }));
     fetchData();
+    if (window.innerWidth < 1024) {
+      setIsFilterOpen(false);
+    }
   };
 
   const handleQuickDate = (type: string) => {
@@ -201,117 +206,135 @@ export default function DataOverview() {
              </div>
              <h3 className="text-sm font-semibold text-text">数据报表</h3>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center bg-black/5 dark:bg-white/5 border border-border rounded-xl px-3 py-1.5">
-              <input
-                type="date"
-                className="bg-transparent border-none focus:ring-0 text-xs text-text w-28"
-                value={dateRange.start}
-                onChange={e => setDateRange({ ...dateRange, start: e.target.value })}
-              />
-              <span className="px-2 text-text-muted">至</span>
-              <input
-                type="date"
-                className="bg-transparent border-none focus:ring-0 text-xs text-text w-28"
-                value={dateRange.end}
-                onChange={e => setDateRange({ ...dateRange, end: e.target.value })}
-              />
-            </div>
-            <div className="flex gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl border border-border">
-              {[
-                { label: '昨日', key: 'yesterday' },
-                { label: '7天', key: 'last7' },
-                { label: '30天', key: 'last30' },
-                { label: '本月', key: 'thisMonth' },
-              ].map(btn => (
-                <button
-                  key={btn.key}
-                  onClick={() => handleQuickDate(btn.key)}
-                  className="px-3 py-1 text-[10px] font-medium rounded-lg hover:bg-white dark:hover:bg-white/5 text-text-muted hover:text-text transition-all"
-                >
-                  {btn.label}
-                </button>
-              ))}
-            </div>
+          <div className="lg:hidden">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-black/5 dark:bg-white/5 border border-border rounded-xl text-xs font-bold text-text-muted"
+            >
+              <Search size={14} />
+              <span>搜索筛选</span>
+              <ChevronRight size={14} className={clsx("transition-transform duration-300", isFilterOpen ? "rotate-90" : "")} />
+            </button>
           </div>
         </div>
 
-        {/* Advanced Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
-              <Zap className="w-3 h-3" /> 代码位ID
-            </label>
-            <input
-              type="text"
-              className="block w-full rounded-xl border-border bg-black/5 dark:bg-white/5 py-2 px-3 text-text placeholder:text-text-muted focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-xs"
-              placeholder="输入代码位ID"
-              value={filters.codeSlotId}
-              onChange={e => setFilters({ ...filters, codeSlotId: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
-              <Layout className="w-3 h-3" /> 代码位名称
-            </label>
-            <input
-              type="text"
-              className="block w-full rounded-xl border-border bg-black/5 dark:bg-white/5 py-2 px-3 text-text placeholder:text-text-muted focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-xs"
-              placeholder="输入名称关键词"
-              value={filters.codeSlotName}
-              onChange={e => setFilters({ ...filters, codeSlotName: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
-              <Terminal className="w-3 h-3" /> 终端类型
-            </label>
-            <Select
-              value={filters.terminal}
-              onChange={(val) => setFilters({ ...filters, terminal: val as string })}
-              options={[
-                { value: '全部', label: '全部终端' },
-                { value: 'H5', label: 'H5' },
-                { value: 'PC', label: 'PC' },
-                { value: 'App', label: 'App' }
-              ]}
-              size="sm"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
-              <Activity className="w-3 h-3" /> 展现形式
-            </label>
-            <Select
-              value={filters.type}
-              onChange={(val) => setFilters({ ...filters, type: val as string })}
-              options={[
-                { value: '全部', label: '全部形式' },
-                { value: 'Banner', label: '固定块' },
-                { value: 'Interstitial', label: '插屏' },
-                { value: 'Native', label: '原生' }
-              ]}
-              size="sm"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
-              <Filter className="w-3 h-3" /> 平台类型
-            </label>
-            <Select
-              value={filters.platformType}
-              onChange={(val) => setFilters({ ...filters, platformType: val as string })}
-              options={PLATFORM_TYPE_FILTER_OPTIONS}
-              size="sm"
-            />
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleSearch}
-              className="flex-1 inline-flex justify-center items-center gap-2 rounded-xl bg-primary py-2 px-4 text-xs font-semibold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98]"
-            >
-              <Search className="h-3.5 w-3.5" /> 查询
-            </button>
+        <div className={clsx(
+          "transition-all duration-300 ease-in-out lg:block lg:opacity-100",
+          isFilterOpen ? "opacity-100 max-h-[900px] overflow-visible" : "max-h-0 opacity-0 lg:max-h-none overflow-hidden lg:overflow-visible"
+        )}>
+          <div className="space-y-4 pt-4 lg:pt-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center bg-black/5 dark:bg-white/5 border border-border rounded-xl px-3 py-1.5">
+                <input
+                  type="date"
+                  className="bg-transparent border-none focus:ring-0 text-xs text-text w-28"
+                  value={dateRange.start}
+                  onChange={e => setDateRange({ ...dateRange, start: e.target.value })}
+                />
+                <span className="px-2 text-text-muted">至</span>
+                <input
+                  type="date"
+                  className="bg-transparent border-none focus:ring-0 text-xs text-text w-28"
+                  value={dateRange.end}
+                  onChange={e => setDateRange({ ...dateRange, end: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl border border-border">
+                {[
+                  { label: '昨日', key: 'yesterday' },
+                  { label: '7天', key: 'last7' },
+                  { label: '30天', key: 'last30' },
+                  { label: '本月', key: 'thisMonth' },
+                ].map(btn => (
+                  <button
+                    key={btn.key}
+                    onClick={() => handleQuickDate(btn.key)}
+                    className="px-3 py-1 text-[10px] font-medium rounded-lg hover:bg-white dark:hover:bg-white/5 text-text-muted hover:text-text transition-all"
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Advanced Filters */}
+            <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
+                  <Zap className="w-3 h-3" /> 代码位ID
+                </label>
+                <input
+                  type="text"
+                  className="block w-full rounded-xl border-border bg-black/5 dark:bg-white/5 py-2 px-3 text-text placeholder:text-text-muted focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-xs"
+                  placeholder="输入代码位ID"
+                  value={filters.codeSlotId}
+                  onChange={e => setFilters({ ...filters, codeSlotId: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
+                  <Layout className="w-3 h-3" /> 代码位名称
+                </label>
+                <input
+                  type="text"
+                  className="block w-full rounded-xl border-border bg-black/5 dark:bg-white/5 py-2 px-3 text-text placeholder:text-text-muted focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none border transition-all text-xs"
+                  placeholder="输入名称关键词"
+                  value={filters.codeSlotName}
+                  onChange={e => setFilters({ ...filters, codeSlotName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
+                  <Terminal className="w-3 h-3" /> 终端类型
+                </label>
+                <Select
+                  value={filters.terminal}
+                  onChange={(val) => setFilters({ ...filters, terminal: val as string })}
+                  options={[
+                    { value: '全部', label: '全部终端' },
+                    { value: 'H5', label: 'H5' },
+                    { value: 'PC', label: 'PC' },
+                    { value: 'App', label: 'App' }
+                  ]}
+                  size="sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
+                  <Activity className="w-3 h-3" /> 展现形式
+                </label>
+                <Select
+                  value={filters.type}
+                  onChange={(val) => setFilters({ ...filters, type: val as string })}
+                  options={[
+                    { value: '全部', label: '全部形式' },
+                    { value: 'Banner', label: '固定块' },
+                    { value: 'Interstitial', label: '插屏' },
+                    { value: 'Native', label: '原生' }
+                  ]}
+                  size="sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-muted uppercase flex items-center gap-1.5">
+                  <Filter className="w-3 h-3" /> 平台类型
+                </label>
+                <Select
+                  value={filters.platformType}
+                  onChange={(val) => setFilters({ ...filters, platformType: val as string })}
+                  options={PLATFORM_TYPE_FILTER_OPTIONS}
+                  size="sm"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 inline-flex justify-center items-center gap-2 rounded-xl bg-primary py-2 px-4 text-xs font-semibold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98]"
+                >
+                  <Search className="h-3.5 w-3.5" /> 查询
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
